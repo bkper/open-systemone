@@ -1,0 +1,22 @@
+{
+  "model": "example-model",
+  "state": "Order 5512 shipped from Rotterdam on 2026-04-02 by sea freight to Santos. Similar shipments took 24 to 31 days. The crate holds 40 boxes of ceramic tiles.",
+  "questions": {
+    "arrival": {
+      "type": "estimate",
+      "min": "2026-04-02",
+      "max": "2026-06-30",
+      "step": 1,
+      "instructions": "Date the order arrives in Santos"
+    },
+    "crate_weight": {
+      "type": "estimate",
+      "unit": "kg",
+      "min": 0,
+      "max": 5000,
+      "step": 10,
+      "quantiles": true,
+      "instructions": "Weight of the crate"
+    }
+  }
+}

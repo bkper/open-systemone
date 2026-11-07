@@ -1,0 +1,28 @@
+{
+  "model": "example-model-2026-03-01",
+  "answers": {
+    "arrival": {
+      "type": "estimate",
+      "value": "2026-04-30",
+      "median": "2026-04-30",
+      "p10": "2026-04-27",
+      "p90": "2026-05-05",
+      "mean": "2026-05-01"
+    },
+    "crate_weight": {
+      "type": "estimate",
+      "value": 930,
+      "median": 940,
+      "p10": 650,
+      "p90": 1270,
+      "mean": 951.3,
+      "p_below": 0,
+      "p_above": 0
+    }
+  },
+  "usage": {
+    "input_tokens": 188,
+    "output_tokens": 0
+  },
+  "truncated": false
+}

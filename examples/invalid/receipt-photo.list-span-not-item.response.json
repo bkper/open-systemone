@@ -1,0 +1,44 @@
+{
+  "model": "example-model-2026-03-01",
+  "answers": {
+    "employee": {
+      "type": "text",
+      "value": "Sam Lee",
+      "p_null": 0.001,
+      "confidence": 0.99,
+      "guess": "Sam Lee",
+      "span": [
+        19,
+        26
+      ]
+    },
+    "receipt_total": {
+      "type": "number",
+      "value": 48.6,
+      "p_null": 0.004,
+      "confidence": 0.97,
+      "guess": 48.6,
+      "span": null
+    },
+    "expenses": {
+      "type": "list",
+      "value": [
+        "Lunch",
+        "parking"
+      ],
+      "confidence": 0.93,
+      "spans": [
+        null,
+        [
+          112,
+          124
+        ]
+      ]
+    }
+  },
+  "usage": {
+    "input_tokens": 412,
+    "output_tokens": 0
+  },
+  "truncated": false
+}

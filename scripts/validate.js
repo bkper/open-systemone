@@ -1,17 +1,19 @@
-// Validates every example in examples/ against the OpenAPI contract.
+// Validates every example in examples/ against the OpenAPI contract: the draft, and the
+// release it is identical to when it names one.
 //
 // The file suffix selects the schema: *.request.json, *.response.json, *.error.json.
 // Files under examples/invalid/ must fail validation; all others must pass.
 // A response is checked against its request: the request with the same name up to the
 // first dot, in the response's directory or in examples/. The checks cover rules JSON
 // Schema cannot express: matching question names and types, choice in criteria, null
-// threshold, span text, list spans, estimate bounds and grid, and forecast horizon.
+// threshold, span text, list spans, estimate bounds and grid, quantiles only when requested,
+// and forecast horizon.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { contractPath } from './contract.js';
+import { contractPaths } from './contract.js';
 
 const root = join(import.meta.dirname, '..');
 const examplesDir = join(root, 'examples');
@@ -39,7 +41,8 @@ function readJson(path) {
 }
 
 function createValidators(document) {
-    const ajv = new Ajv2020({ strict: true, allErrors: true });
+    // strictRequired is off because a conditional `then` requires properties declared by its parent schema.
+    const ajv = new Ajv2020({ strict: true, strictRequired: false, allErrors: true });
     addFormats(ajv);
     // OpenAPI annotation: oneOf plus a const type already selects the branch.
     ajv.addKeyword('discriminator');
@@ -86,10 +89,11 @@ function onGrid(value, min, step) {
 
 function distributionProblems({ min, max, step }, distribution) {
     const problems = [];
-    const { value, median, p10, p90, quantiles = [] } = distribution;
+    const { value, median, p10, p90, mean, quantiles = [] } = distribution;
     for (const v of [value, median, p10, p90, ...quantiles]) {
         if (typeof v !== typeof min || v < min || v > max) problems.push(`${v} is outside [${min}, ${max}]`);
     }
+    if (mean !== undefined && typeof mean !== typeof min) problems.push(`mean ${mean} is not of the same kind as min`);
     if (typeof step === 'number' && typeof min === 'number') {
         for (const v of [value, median, p10, p90]) {
             if (!onGrid(v, min, step)) problems.push(`${v} is not on the grid ${min} + k * ${step}`);
@@ -120,15 +124,23 @@ function answerProblems(question, answer, text) {
             problems.push(`${answer.spans.length} spans for ${answer.value.length} items`);
         }
         (answer.spans ?? []).forEach((span, i) => {
-            problems.push(...spanProblems(span, textItems ? answer.value[i] : undefined, text));
+            if (span) problems.push(...spanProblems(span, textItems ? answer.value[i] : undefined, text));
         });
     }
-    if (answer.type === 'estimate') problems.push(...distributionProblems(question, answer));
+    if (answer.type === 'estimate') {
+        problems.push(...distributionProblems(question, answer));
+        if (Boolean(answer.quantiles) !== (question.quantiles === true)) {
+            problems.push('quantiles must be present exactly when the question sets quantiles to true');
+        }
+    }
     if (answer.type === 'forecast') {
         if (answer.steps.length !== question.horizon) {
             problems.push(`${answer.steps.length} steps, expected horizon ${question.horizon}`);
         }
-        for (const step of answer.steps) problems.push(...distributionProblems(question, step));
+        for (const step of answer.steps) {
+            problems.push(...distributionProblems(question, step));
+            if (step.quantiles !== undefined) problems.push('forecast steps have no quantiles');
+        }
     }
     return problems;
 }
@@ -154,39 +166,47 @@ function pairProblems(request, response) {
     return problems;
 }
 
-const document = readJson(contractPath(root));
-const validators = createValidators(document);
-const failures = [];
-let checked = 0;
+function validateExamples(contract) {
+    const validators = createValidators(readJson(contract));
+    const failures = [];
+    let checked = 0;
 
-for (const path of listJsonFiles(examplesDir).sort()) {
-    const name = relative(root, path);
-    const schema = schemaFor(path);
-    if (!schema) {
-        failures.push(`${name}: name must end with ${Object.keys(SCHEMA_BY_SUFFIX).join(', ')}`);
-        continue;
-    }
-    const validate = validators[schema];
-    const example = readJson(path);
-    const problems = validate(example) ? [] : [`fails ${schema}\n${JSON.stringify(validate.errors, null, 2)}`];
-    if (problems.length === 0 && schema === 'SystemOneResponse') {
-        const request = requestFor(path);
-        if (request) problems.push(...pairProblems(request, example));
-    }
-    const mustFail = path.startsWith(invalidDir);
-    checked++;
+    for (const path of listJsonFiles(examplesDir).sort()) {
+        const name = relative(root, path);
+        const schema = schemaFor(path);
+        if (!schema) {
+            failures.push(`${name}: name must end with ${Object.keys(SCHEMA_BY_SUFFIX).join(', ')}`);
+            continue;
+        }
+        const validate = validators[schema];
+        const example = readJson(path);
+        const problems = validate(example) ? [] : [`fails ${schema}\n${JSON.stringify(validate.errors, null, 2)}`];
+        if (problems.length === 0 && schema === 'SystemOneResponse') {
+            const request = requestFor(path);
+            if (request) problems.push(...pairProblems(request, example));
+        }
+        const mustFail = path.startsWith(invalidDir);
+        checked++;
 
-    if (mustFail && problems.length === 0) {
-        failures.push(`${name}: expected to fail, but it passed`);
-    } else if (!mustFail) {
-        failures.push(...problems.map(problem => `${name}: ${problem}`));
+        if (mustFail && problems.length === 0) {
+            failures.push(`${name}: expected to fail, but it passed`);
+        } else if (!mustFail) {
+            failures.push(...problems.map(problem => `${name}: ${problem}`));
+        }
     }
+
+    if (checked === 0) failures.push('No examples found');
+    return { checked, failures: failures.map(failure => `${relative(root, contract)}: ${failure}`) };
 }
 
-if (checked === 0) failures.push('No examples found');
-
-if (failures.length > 0) {
-    console.error(failures.join('\n'));
-    process.exit(1);
+let failed = false;
+for (const contract of contractPaths(root)) {
+    const { checked, failures } = validateExamples(contract);
+    if (failures.length > 0) {
+        console.error(failures.join('\n'));
+        failed = true;
+    } else {
+        console.log(`Validated ${checked} examples against ${relative(root, contract)}`);
+    }
 }
-console.log(`Validated ${checked} examples against ${relative(root, contractPath(root))}`);
+if (failed) process.exit(1);

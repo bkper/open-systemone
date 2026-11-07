@@ -1,7 +1,9 @@
-// Checks that SPEC.md and the OpenAPI contract agree.
+// Checks that SPEC.md and the OpenAPI contract agree: the draft, and the release it is identical
+// to when it names one.
 //
 // - The question types table (header starting with "Type") lists exactly the question and
-//   answer types of SystemOneQuestion and SystemOneAnswer, with their schema names and
+//   answer types of SystemOneQuestion and SystemOneAnswer (including nested unions such as
+//   SystemOneCoreQuestion), with their schema names and
 //   their required and optional settings.
 // - A table whose first header cell is a schema name, such as `SystemOneRequest`, lists
 //   exactly that schema's properties, with "yes" in its Required column for required ones.
@@ -10,16 +12,16 @@
 
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { contractPath } from './contract.js';
+import { contractPaths } from './contract.js';
 
 const root = join(import.meta.dirname, '..');
 const specPath = join(root, 'SPEC.md');
 const EXTENSION_TYPE = 'owner:type';
 
 const spec = readFileSync(specPath, 'utf8');
-const document = JSON.parse(readFileSync(contractPath(root), 'utf8'));
-const schemas = document.components.schemas;
-const failures = [];
+// The contract being checked; set for each contract before calling checkSpec.
+let schemas;
+let failures;
 
 function codes(text) {
     return [...text.matchAll(/`([^`]+)`/g)].map(match => match[1]);
@@ -58,13 +60,15 @@ function section(markdown, heading) {
     return markdown.slice(start, end === -1 ? undefined : end);
 }
 
-// Maps each union member's type name (owner:type for extensions) to its schema name.
+// Maps each union member's type name (owner:type for extensions) to its schema name,
+// descending into members that are unions themselves.
 function typesOf(unionName) {
     return new Map(
-        schemas[unionName].oneOf.map(({ $ref }) => {
+        schemas[unionName].oneOf.flatMap(({ $ref }) => {
             const name = schemaName($ref);
+            if (schemas[name].oneOf) return [...typesOf(name)];
             const type = schemas[name].properties.type;
-            return [type.const ?? (type.$ref && EXTENSION_TYPE), name];
+            return [[type.const ?? (type.$ref && EXTENSION_TYPE), name]];
         }),
     );
 }
@@ -130,35 +134,47 @@ function checkFieldsTable(table, name) {
     }
 }
 
-let typesTable;
-for (const table of tables(spec)) {
-    if (table.header[0] === 'Type') {
-        typesTable = table;
-        continue;
+// Checks SPEC.md against the schemas set for the current contract, adding to failures.
+function checkSpec() {
+    let typesTable;
+    for (const table of tables(spec)) {
+        if (table.header[0] === 'Type') {
+            typesTable = table;
+            continue;
+        }
+        const name = codes(table.header[0])[0];
+        if (!name) continue;
+        if (!schemas[name]) failures.push(`table for unknown schema ${name}`);
+        else checkFieldsTable(table, name);
     }
-    const name = codes(table.header[0])[0];
-    if (!name) continue;
-    if (!schemas[name]) failures.push(`table for unknown schema ${name}`);
-    else checkFieldsTable(table, name);
-}
 
-if (!typesTable) {
-    failures.push('SPEC.md has no question types table');
-} else {
-    const guarantees = codes(section(spec, 'Answer guarantees'));
-    for (const type of checkTypesTable(typesTable)) {
-        if (type !== EXTENSION_TYPE && !guarantees.includes(type)) {
-            failures.push(`type ${type} has no answer guarantee`);
+    if (!typesTable) {
+        failures.push('SPEC.md has no question types table');
+    } else {
+        const guarantees = codes(section(spec, 'Answer guarantees'));
+        for (const type of checkTypesTable(typesTable)) {
+            if (type !== EXTENSION_TYPE && !guarantees.includes(type)) {
+                failures.push(`type ${type} has no answer guarantee`);
+            }
         }
     }
+
+    for (const name of new Set(codes(spec).filter(code => /^[A-Z][A-Za-z]+$/.test(code)))) {
+        if (!schemas[name]) failures.push(`SPEC.md mentions ${name}, which is not a schema`);
+    }
 }
 
-for (const name of new Set(codes(spec).filter(code => /^[A-Z][A-Za-z]+$/.test(code)))) {
-    if (!schemas[name]) failures.push(`SPEC.md mentions ${name}, which is not a schema`);
+let failed = false;
+for (const contract of contractPaths(root)) {
+    schemas = JSON.parse(readFileSync(contract, 'utf8')).components.schemas;
+    failures = [];
+    checkSpec();
+    const name = relative(root, contract);
+    if (failures.length > 0) {
+        console.error(failures.map(failure => `SPEC.md (${name}): ${failure}`).join('\n'));
+        failed = true;
+    } else {
+        console.log(`SPEC.md agrees with ${name}`);
+    }
 }
-
-if (failures.length > 0) {
-    console.error(failures.map(failure => `SPEC.md: ${failure}`).join('\n'));
-    process.exit(1);
-}
-console.log(`SPEC.md agrees with ${relative(root, contractPath(root))}`);
+if (failed) process.exit(1);

@@ -106,7 +106,7 @@
           },
           "assets": {
             "type": "object",
-            "description": "Media assets keyed by an opaque placeholder, such as a per-image UUID. Each placeholder, wherever it appears as or inside a string in state, question instructions, or criteria, is replaced with the asset. Image assets require a model that accepts images.",
+            "description": "Media assets keyed by an opaque placeholder, such as a per-image UUID. Each placeholder, wherever it appears as or inside a string in state, question instructions, or criteria, is replaced with the asset. The placeholder's position is a hint: an implementer may present assets before the state instead. Image assets require a model that accepts images.",
             "minProperties": 1,
             "additionalProperties": {
               "$ref": "#/components/schemas/SystemOneAsset"
@@ -142,11 +142,11 @@
           },
           "truncated": {
             "type": "boolean",
-            "description": "Whether the server shortened the state to fit the model's context. Present whenever the server knows."
+            "description": "Whether the server shortened the state to fit the model's context. Present whenever the server knows. A server may instead reject oversized input with an error of its own."
           },
           "state_text": {
             "type": "string",
-            "description": "The text the model read, when it differs from the state as sent, for example when structured state is serialized to text. Answer spans index into state_text when it is present."
+            "description": "The text the model read, when it differs from the state as sent, for example when structured state is serialized to text, or only the portion the model read when truncated is true. Answer spans index into state_text when it is present."
           }
         }
       },
@@ -189,7 +189,7 @@
           },
           "format": {
             "type": "string",
-            "enum": ["png", "jpg", "jpeg"],
+            "enum": ["png", "jpg", "jpeg", "webp"],
             "description": "The image format, required with data_base64."
           },
           "data_base64": {
@@ -204,7 +204,15 @@
       },
       "SystemOneQuestion": {
         "title": "SystemOneQuestion",
-        "description": "A question about the state. The type selects the question shape and the answer shape. Decision types are noul, choice, score, and box; extraction types are text, number, date, time, datetime, duration, list, estimate, and forecast. Any other type must be an extension type named owner:type.",
+        "description": "A question about the state: a core question, or an extension question whose type is named owner:type. The type selects the question shape and the answer shape.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/SystemOneCoreQuestion" },
+          { "$ref": "#/components/schemas/ExtensionQuestion" }
+        ]
+      },
+      "SystemOneCoreQuestion": {
+        "title": "SystemOneCoreQuestion",
+        "description": "A question of a core type. Decision types are noul, choice, score, and box; extraction types are text, number, date, time, datetime, duration, list, estimate, and forecast.",
         "oneOf": [
           { "$ref": "#/components/schemas/NoulQuestion" },
           { "$ref": "#/components/schemas/ChoiceQuestion" },
@@ -218,8 +226,7 @@
           { "$ref": "#/components/schemas/DurationQuestion" },
           { "$ref": "#/components/schemas/ListQuestion" },
           { "$ref": "#/components/schemas/EstimateQuestion" },
-          { "$ref": "#/components/schemas/ForecastQuestion" },
-          { "$ref": "#/components/schemas/ExtensionQuestion" }
+          { "$ref": "#/components/schemas/ForecastQuestion" }
         ],
         "discriminator": {
           "propertyName": "type",
@@ -242,7 +249,15 @@
       },
       "SystemOneAnswer": {
         "title": "SystemOneAnswer",
-        "description": "An answer whose type matches its question's type.",
+        "description": "An answer whose type matches its question's type: a core answer, or an extension answer.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/SystemOneCoreAnswer" },
+          { "$ref": "#/components/schemas/ExtensionAnswer" }
+        ]
+      },
+      "SystemOneCoreAnswer": {
+        "title": "SystemOneCoreAnswer",
+        "description": "An answer of a core type.",
         "oneOf": [
           { "$ref": "#/components/schemas/NoulAnswer" },
           { "$ref": "#/components/schemas/ChoiceAnswer" },
@@ -256,8 +271,7 @@
           { "$ref": "#/components/schemas/DurationAnswer" },
           { "$ref": "#/components/schemas/ListAnswer" },
           { "$ref": "#/components/schemas/EstimateAnswer" },
-          { "$ref": "#/components/schemas/ForecastAnswer" },
-          { "$ref": "#/components/schemas/ExtensionAnswer" }
+          { "$ref": "#/components/schemas/ForecastAnswer" }
         ],
         "discriminator": {
           "propertyName": "type",
@@ -384,7 +398,7 @@
           },
           "choice": {
             "type": "string",
-            "description": "The name of the choice with the highest probability."
+            "description": "The name of the selected choice, one of the question's criteria. Normally the choice with the highest probability."
           },
           "confidence": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -535,7 +549,7 @@
       "TextAnswer": {
         "type": "object",
         "title": "TextAnswer",
-        "description": "Text copied from the state. value is null when p_null is above the question's null_threshold, and not null otherwise. When span is present, the text it covers equals guess.",
+        "description": "Text copied from the state. value is null when p_null is above the question's null_threshold, and not null otherwise. When span is not null, the text it covers equals guess.",
         "required": ["type", "value", "p_null", "confidence"],
         "properties": {
           "type": {
@@ -554,7 +568,11 @@
             "description": "The most likely text, present even when value is null."
           },
           "span": {
-            "$ref": "#/components/schemas/SystemOneSpan"
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
           },
           "p_null": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -565,8 +583,14 @@
             "description": "Confidence in guess, from 0 to 1."
           }
         },
-        "dependentRequired": {
-          "span": ["guess"]
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
         }
       },
       "NumberQuestion": {
@@ -618,7 +642,11 @@
             "description": "The most likely number, present even when value is null."
           },
           "span": {
-            "$ref": "#/components/schemas/SystemOneSpan"
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
           },
           "p_null": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -629,8 +657,14 @@
             "description": "Confidence in guess, from 0 to 1."
           }
         },
-        "dependentRequired": {
-          "span": ["guess"]
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
         }
       },
       "DateQuestion": {
@@ -674,7 +708,11 @@
             "description": "The most likely date, present even when value is null."
           },
           "span": {
-            "$ref": "#/components/schemas/SystemOneSpan"
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
           },
           "p_null": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -685,8 +723,14 @@
             "description": "Confidence in guess, from 0 to 1."
           }
         },
-        "dependentRequired": {
-          "span": ["guess"]
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
         }
       },
       "TimeQuestion": {
@@ -710,7 +754,7 @@
       "TimeAnswer": {
         "type": "object",
         "title": "TimeAnswer",
-        "description": "A time of day as HH:MM or HH:MM:SS, 24-hour, without a time zone (format to verify against implementations). value is null when p_null is above the question's null_threshold, and not null otherwise.",
+        "description": "A time of day as HH:MM or HH:MM:SS, 24-hour, without a time zone. value is null when p_null is above the question's null_threshold, and not null otherwise.",
         "required": ["type", "value", "p_null", "confidence"],
         "properties": {
           "type": {
@@ -729,7 +773,11 @@
             "description": "The most likely time, present even when value is null."
           },
           "span": {
-            "$ref": "#/components/schemas/SystemOneSpan"
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
           },
           "p_null": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -740,8 +788,14 @@
             "description": "Confidence in guess, from 0 to 1."
           }
         },
-        "dependentRequired": {
-          "span": ["guess"]
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
         }
       },
       "DateTimeQuestion": {
@@ -784,7 +838,11 @@
             "description": "The most likely date and time, present even when value is null."
           },
           "span": {
-            "$ref": "#/components/schemas/SystemOneSpan"
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
           },
           "p_null": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -795,8 +853,14 @@
             "description": "Confidence in guess, from 0 to 1."
           }
         },
-        "dependentRequired": {
-          "span": ["guess"]
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
         }
       },
       "DurationQuestion": {
@@ -852,7 +916,11 @@
             "description": "The unit of value and guess, the same as the question's."
           },
           "span": {
-            "$ref": "#/components/schemas/SystemOneSpan"
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
           },
           "p_null": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -863,8 +931,14 @@
             "description": "Confidence in guess, from 0 to 1."
           }
         },
-        "dependentRequired": {
-          "span": ["guess"]
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
         }
       },
       "ListQuestion": {
@@ -913,9 +987,12 @@
           },
           "spans": {
             "type": "array",
-            "description": "One span per item, in the same order. Required for text items; for other items, present when they are read from the input.",
+            "description": "One entry per item, in the same order: the item's span, or null when the item was not read from the state text, for example when it was read from an image. Required for text items; for other items, present when they are read from the state text.",
             "items": {
-              "$ref": "#/components/schemas/SystemOneSpan"
+              "anyOf": [
+                { "$ref": "#/components/schemas/SystemOneSpan" },
+                { "type": "null" }
+              ]
             }
           },
           "confidence": {
@@ -956,8 +1033,7 @@
           },
           "quantiles": {
             "type": "boolean",
-            "default": false,
-            "description": "Whether the answer includes quantiles, the 1st to 99th percentiles."
+            "description": "Whether the answer includes quantiles, the 1st to 99th percentiles. Defaults to false."
           }
         }
       },
@@ -973,6 +1049,15 @@
           "type": {
             "type": "string",
             "const": "estimate"
+          },
+          "quantiles": {
+            "type": "array",
+            "description": "The 1st to 99th percentiles, in order. Present only when the question sets quantiles to true.",
+            "minItems": 99,
+            "maxItems": 99,
+            "items": {
+              "$ref": "#/components/schemas/SystemOneEstimateValue"
+            }
           }
         }
       },
@@ -1021,7 +1106,7 @@
       "ForecastAnswer": {
         "type": "object",
         "title": "ForecastAnswer",
-        "description": "One estimate per step ahead (shape to verify against implementations).",
+        "description": "One estimate per step ahead, as a steps array.",
         "required": ["type", "steps"],
         "properties": {
           "type": {
@@ -1030,7 +1115,7 @@
           },
           "steps": {
             "type": "array",
-            "description": "Exactly horizon estimates, nearest step first.",
+            "description": "Exactly horizon estimates, nearest step first. Steps have no quantiles.",
             "minItems": 1,
             "items": {
               "$ref": "#/components/schemas/SystemOneDistribution"
@@ -1122,7 +1207,7 @@
       "SystemOneSpan": {
         "type": "array",
         "title": "SystemOneSpan",
-        "description": "Where guess was read in the input: a half-open range [start, end) of character offsets, counted in Unicode code points (unit to verify against implementations), into state, or into the response's state_text when present.",
+        "description": "Where guess was read in the input: a half-open range [start, end) of character offsets, counted in Unicode code points, into state, or into the response's state_text when present.",
         "minItems": 2,
         "maxItems": 2,
         "items": {
@@ -1156,7 +1241,7 @@
       "SystemOneDistribution": {
         "type": "object",
         "title": "SystemOneDistribution",
-        "description": "A predicted distribution. value, median, p10, p90, and quantiles are within the question's [min, max]; value, median, p10, and p90 are on its step grid; p10 <= median <= p90.",
+        "description": "A predicted distribution, of the same kind as the question's min and max (numbers or dates). value, median, p10, and p90 are within [min, max] and on the step grid; p10 <= median <= p90.",
         "required": ["value", "median", "p10", "p90"],
         "properties": {
           "value": {
@@ -1177,7 +1262,7 @@
           },
           "mean": {
             "$ref": "#/components/schemas/SystemOneEstimateValue",
-            "description": "The mean. It may fall between grid points."
+            "description": "The mean, a date for date estimates. It may fall between grid points."
           },
           "p_below": {
             "$ref": "#/components/schemas/SystemOneProbability",
@@ -1186,15 +1271,6 @@
           "p_above": {
             "$ref": "#/components/schemas/SystemOneProbability",
             "description": "Probability that the true value is above max."
-          },
-          "quantiles": {
-            "type": "array",
-            "description": "The 1st to 99th percentiles, in order. Present when the question sets quantiles.",
-            "minItems": 99,
-            "maxItems": 99,
-            "items": {
-              "$ref": "#/components/schemas/SystemOneEstimateValue"
-            }
           }
         }
       },

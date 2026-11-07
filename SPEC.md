@@ -14,7 +14,7 @@ The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be in
 - **Client**: anything that calls an implementer.
 - **Decision types** (`noul`, `choice`, `score`, `box`) judge the state: a probability, a choice, a score, or a box in an image. They come from TypeSafe's format.
 - **Extraction types** (`text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, `forecast`) answer with values read, computed, or estimated from the state.
-- **Core types** are the decision and extraction types above. **Extension types** are any other type, named `owner:type`.
+- **Core types** are the decision and extraction types above (`SystemOneCoreQuestion`, `SystemOneCoreAnswer`). **Extension types** are any other type, named `owner:type`.
 
 An implementer need not support every core type. It MUST reject the ones it does not support (see [Errors](#errors)).
 
@@ -27,7 +27,7 @@ An implementer MUST serve `POST /v1/systemone` and MUST accept an `application/j
 | `model` | yes | Name or alias of the model. |
 | `state` | yes | String, object, or array. |
 | `questions` | yes | One or more questions keyed by names the client chooses. Types MAY be mixed in one request. |
-| `assets` | no | Images keyed by placeholder. Each placeholder, wherever it appears as or inside a string in `state`, `instructions`, or `criteria`, stands for the asset. An asset carries `data_base64` with `format`, or, in a multipart request, the name of its image `part`; every image part is used by exactly one asset. |
+| `assets` | no | Images keyed by placeholder. Each placeholder, wherever it appears as or inside a string in `state`, `instructions`, or `criteria`, stands for the asset. An asset carries `data_base64` with `format`, or, in a multipart request, the name of its image `part`; every image part is used by exactly one asset. The placeholder's position is a hint: an implementer MAY present assets before the state, for example when its model reads images only there. |
 | `reference_date` | no | `YYYY-MM-DD`. Relative and year-less dates in the state resolve against it. |
 
 | `SystemOneResponse` | Required | Rules |
@@ -73,7 +73,7 @@ An implementer MUST return answers that satisfy these rules. Clients MAY rely on
 ### Decision types
 
 - `noul`, `choice`, `score`, and `box` answers keep TypeSafe's shapes exactly.
-- `choice`: `choice` MUST be one of the question's `criteria` names: the one with the highest probability. `probabilities` is keyed by criteria names.
+- `choice`: `choice` MUST be one of the question's `criteria` names and SHOULD be the one with the highest probability. `probabilities` is keyed by criteria names.
 - `score`: `legend` and `probabilities` are keyed by score level, `"0"` for the first criterion. `score` is within `[0, number of criteria - 1]`.
 
 ### Value types
@@ -81,30 +81,31 @@ An implementer MUST return answers that satisfy these rules. Clients MAY rely on
 `text`, `number`, `date`, `time`, `datetime`, and `duration` are value types. Their answers have `value`, `p_null`, `confidence`, and optionally `guess` and `span`.
 
 - **Null rule**: `value` MUST be null when `p_null` is above the question's `null_threshold`, and MUST NOT be null otherwise. `null_threshold` defaults to 0.5.
-- **Guess**: `guess` is the most likely value. An implementer that returns `guess` MUST return it also when `value` is null. An answer with `span` MUST have `guess`.
-- **Span**: `span` is where `guess` was read in the input, as a half-open range `[start, end)` of `SystemOneSpan` offsets, with `start <= end <= length`. It indexes into `state_text` when the response has it, and into `state` otherwise. For `text`, the spanned text MUST equal `guess`; for other value types it is the text `guess` was read from, such as `$52.10` for `52.1`. An answer computed rather than read MAY omit `span`.
-- **Offsets** count Unicode code points (to verify).
+- **Guess**: `guess` is the most likely value. An implementer that returns `guess` MUST return it also when `value` is null. An answer with a non-null `span` MUST have `guess`.
+- **Span**: `span` is where `guess` was read in the state text, as a half-open range `[start, end)` of `SystemOneSpan` offsets, with `start <= end <= length`. It indexes into `state_text` when the response has it, and into `state` otherwise. For `text`, the spanned text MUST equal `guess`; for other value types it is the text `guess` was read from, such as `$52.10` for `52.1`. When `guess` was not read from the state text, for example when it was read from an image or computed, `span` is absent or null.
+- **Offsets** count Unicode code points.
 - `number` and `duration` values honor `integer` and `decimals`. A `duration` answer's `unit` equals its question's `unit`, which defaults to `seconds`.
-- `date` is `YYYY-MM-DD`. `time` is 24-hour `HH:MM` or `HH:MM:SS` without a time zone (to verify). `datetime` is `SystemOneDateTime`, with an offset only when the state gives one.
+- `date` is `YYYY-MM-DD`. `time` is 24-hour `HH:MM` or `HH:MM:SS` without a time zone. `datetime` is `SystemOneDateTime`, with an offset only when the state gives one.
 
 ### `list`
 
 - `value` MUST be an array, never null: no match is an empty list.
 - Items MUST be in the order they appear in the input, each in the format of its `items` type.
-- `spans`, when present, has one span per item in the same order, following the span rules above. It is REQUIRED for `text` items, and each text item's span MUST cover exactly that item.
+- `spans`, when present, has one entry per item in the same order: the item's span, following the span rules above, or null when the item was not read from the state text. It is REQUIRED for `text` items, and each non-null entry for a text item MUST cover exactly that item.
 
 ### `estimate`
 
 - An estimate answer is never null.
 - `value`, `median`, `p10`, `p90`, and every entry of `quantiles` MUST be within `[min, max]` and of the same kind as `min` and `max` (numbers or dates).
+- `mean`, `p_below`, and `p_above` are optional. `mean`, when present, is of the same kind as `min` and `max`: a date for date estimates.
 - `value`, `median`, `p10`, and `p90` MUST be on the `step` grid starting at `min`, when `step` is set. `mean` MAY fall between grid points.
 - `p10 <= median <= p90`.
-- `quantiles` MUST be present when the question sets `quantiles: true`, as the 1st to 99th percentiles in non-decreasing order.
+- `quantiles` MUST be present when the question sets `quantiles: true`, as the 1st to 99th percentiles in non-decreasing order, and MUST be absent otherwise.
 
 ### `forecast`
 
-- `steps` MUST have exactly `horizon` entries, nearest step first (shape to verify).
-- Each step MUST satisfy the `estimate` rules, using the question's `min`, `max`, `step`, and `scale`.
+- `steps` MUST have exactly `horizon` entries, nearest step first. Parallel arrays per field, such as an array of values and an array of medians, are not part of the contract; an implementer MAY return them only as extra fields.
+- Each step MUST satisfy the `estimate` rules, using the question's `min`, `max`, `step`, and `scale`. Steps MUST NOT have `quantiles`: forecast questions have no quantiles setting.
 
 ## Truncation and state text
 
@@ -112,6 +113,8 @@ An implementer MUST return answers that satisfy these rules. Clients MAY rely on
 - An answer MUST NOT have spans into a non-string `state` without `state_text`.
 - `truncated` is REQUIRED whenever the implementer knows whether it shortened the state to fit the model's context. An implementer that never truncates MAY omit it or set it to false.
 - Clients MUST NOT read an absent `truncated` as false.
+- When `truncated` is true, `state_text`, if returned, MAY be only the portion of the state the model read. Spans index into it.
+- Instead of truncating, an implementer MAY reject input too long for the model with an implementer-defined error.
 
 ## Errors
 
@@ -157,11 +160,3 @@ An extension type becomes core when at least two independent implementers suppor
 - Open System One is a strict superset of TypeSafe's format: a valid TypeSafe request is a valid `SystemOneRequest`, and TypeSafe answers are valid `SystemOneAnswer`s.
 - Releases MUST NOT change TypeSafe's request or answer shapes.
 - If TypeSafe adds a type whose name collides with a core type, the next dated release adopts TypeSafe's shape. If that shape is not compatible with the core one, the change is breaking and is marked as such; earlier releases keep the old shape.
-
-## To verify
-
-These rules follow published documentation but are not yet confirmed against a live implementation. They may change in a later release.
-
-- **Span offset unit**: offsets count Unicode code points.
-- **Time format**: `time` answers are `HH:MM` or `HH:MM:SS`.
-- **Forecast shape**: `forecast` answers are a `steps` array of distributions, not parallel arrays.

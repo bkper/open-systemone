@@ -3,7 +3,7 @@
 `bun run validate` checks every file here against the contract in `../openapi/`.
 
 - The file suffix selects the schema: `*.request.json` is a `SystemOneRequest`, `*.response.json` a `SystemOneResponse`, and `*.error.json` a `SystemOneErrorResponse`.
-- A request and a response with the same name are a pair. The answers must use the question names and types of the request and follow the rules that depend on it: a choice is one of the criteria, a value is null exactly when `p_null` is above `null_threshold`, a text span covers its `guess` in `state` or `state_text`, text list items have one matching span each, estimates stay within `[min, max]` and on the `step` grid, and a forecast has `horizon` steps.
+- A request and a response with the same name are a pair. The answers must use the question names and types of the request and follow the rules that depend on it: a choice is one of the criteria, a value is null exactly when `p_null` is above `null_threshold`, a text span covers its `guess` in `state` or `state_text`, text list items have one span entry each that is null or covers the item, estimates stay within `[min, max]` and on the `step` grid with a `mean` of the same kind, quantiles appear only when requested and never in forecast steps, and a forecast has `horizon` steps.
 - Files in `invalid/` must fail validation. An invalid response named `<name>.<problem>.response.json` pairs with `<name>.request.json` in this directory, so it can break a rule that depends on the request.
 
 ## Sources

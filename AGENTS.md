@@ -33,7 +33,7 @@ bun install
 bun run validate
 ```
 
-It checks every example against `openapi/draft.json` (or the latest dated file when there is no draft): files outside `examples/invalid/` must pass, files inside must fail, and a request/response pair must have matching question names and types and pass the cross-checks JSON Schema cannot express (choice in criteria, null threshold, span text, estimate bounds, forecast horizon). The file suffix selects the schema (`.request.json`, `.response.json`, `.error.json`); see `examples/README.md`.
+It checks every example against `openapi/draft.json` and, when the draft's `info.version` names a release, against that release too (or against the latest dated file when there is no draft): files outside `examples/invalid/` must pass, files inside must fail, and a request/response pair must have matching question names and types and pass the cross-checks JSON Schema cannot express (choice in criteria, null threshold, span text, estimate bounds, quantiles only when requested, forecast horizon). The file suffix selects the schema (`.request.json`, `.response.json`, `.error.json`); see `examples/README.md`.
 
 It then checks `SPEC.md` against the same contract: the question types table lists exactly the contract's question and answer types with their schema names and required and optional settings, each table headed by a schema name (such as `SystemOneRequest`) lists exactly its properties and which are required, every core type has an answer guarantee, and every schema name mentioned exists. CI runs the same command on every push and pull request (`.github/workflows/validate.yml`).
 
