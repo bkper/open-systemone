@@ -4,16 +4,19 @@ Each release is a dated, immutable OpenAPI file in `openapi/`. Entries describe 
 
 ## Unreleased
 
-- Initial draft: `POST /v1/systemone` with TypeSafe's request, response, and decision question types (`noul`, `choice`, `score`, `box`).
-- Add optional request `reference_date` and response `truncated` and `state_text`.
-- Add the error envelope with standard codes `unsupported_question_type` and `unsupported_parameter`.
-- Add extraction question and answer types: `text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, and `forecast`.
-- Add extension question and answer types named `owner:type`.
-- Add `SPEC.md` with the normative rules: answer guarantees, truncation and `state_text`, the standard errors, extension types and their promotion to core, versioning, and compatibility with TypeSafe.
-- Settle span offsets as Unicode code points, `time` as `HH:MM[:SS]`, and `forecast` answers as a `steps` array.
-- Allow a null `span`, and null entries in a list's `spans`, for values not read from the state text.
-- Let `state_text` be the portion read when the state was truncated, and let implementers reject oversized input.
-- Return estimate `quantiles` only when requested, never in forecast steps; a date estimate's `mean` is a date.
-- Make the most likely criterion a SHOULD for `choice`.
-- Treat the asset placeholder position as a hint, and accept `webp` images.
-- Group the core types in `SystemOneCoreQuestion` and `SystemOneCoreAnswer`, apart from extension types.
+No changes since 2026-11-07.
+
+## 2026-11-07
+
+First release: [openapi/2026-11-07.json](openapi/2026-11-07.json).
+
+- `POST /v1/systemone` with TypeSafe's request, response, and decision question types (`noul`, `choice`, `score`, `box`). Image assets also accept the `webp` format.
+- Optional request `reference_date`, and optional response `truncated` and `state_text`. When the state was truncated, `state_text` may be only the portion the model read. Implementers may reject oversized input instead of truncating it.
+- Error envelope with standard codes `unsupported_question_type` and `unsupported_parameter`.
+- Extraction question and answer types: `text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, and `forecast`.
+- Extension question and answer types named `owner:type`, kept apart from the core types in `SystemOneCoreQuestion` and `SystemOneCoreAnswer`.
+- `SPEC.md` with the normative rules: answer guarantees, truncation and `state_text`, the standard errors, extension types and their promotion to core, versioning, and compatibility with TypeSafe.
+- Spans count Unicode code points. A value not read from the state text, such as one read from an image, has no span: `span` is absent or null, and a list's `spans` entry is null.
+- `time` answers are `HH:MM` or `HH:MM:SS`. `forecast` answers are a `steps` array; steps have no quantiles. Estimate `quantiles` are present only when the question requests them, and a date estimate's `mean` is a date.
+- `choice` must be one of the criteria and should be the most likely one.
+

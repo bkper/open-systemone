@@ -1,6 +1,6 @@
 # Open System One Specification
 
-This document holds the normative rules of Open System One. The contract itself is the OpenAPI file in [openapi/](openapi/draft.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
+This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-07.json](openapi/2026-11-07.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
 
 The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be interpreted as described in RFC 2119.
 
@@ -150,7 +150,8 @@ An extension type becomes core when at least two independent implementers suppor
 ## Versioning
 
 - A release is a single OpenAPI file named `openapi/YYYY-MM-DD.json` by its release date. A released file MUST NOT change.
-- `openapi/draft.json` is the working draft. It MAY change at any time and is not a release.
+- The first release is [2026-11-07](openapi/2026-11-07.json).
+- `openapi/draft.json` is the working draft. It MAY change at any time and is not a release. At a release it is identical to the new release file, whose date is its `info.version`; between releases its `info.version` is `draft`.
 - Additive changes are new optional request fields or question settings, new response fields, and new core types. Any other change, such as removing, renaming, or retyping a field, or making an optional field required, is breaking. Breaking changes SHOULD be avoided and MUST be marked as breaking in the [changelog](CHANGELOG.md).
 - The endpoint path stays `/v1/systemone` across releases.
 - Clients pin a release by vendoring its dated file, optionally with a checksum. Implementers SHOULD state which release they implement.

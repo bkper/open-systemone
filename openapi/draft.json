@@ -2,9 +2,9 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Open System One",
-    "version": "draft",
+    "version": "2026-11-07",
     "summary": "An open contract for System One model APIs.",
-    "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. This is the working draft; released versions are dated, immutable files.",
+    "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. Releases are dated, immutable files; version is the release date.",
     "license": {
       "name": "Apache-2.0",
       "identifier": "Apache-2.0"
