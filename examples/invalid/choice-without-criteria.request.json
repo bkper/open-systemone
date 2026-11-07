@@ -1,0 +1,10 @@
+{
+  "model": "example-model",
+  "state": "Hello",
+  "questions": {
+    "tone": {
+      "type": "choice",
+      "instructions": "What is the tone?"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "model": "example-model",
+  "state": "Due next Friday.",
+  "reference_date": "next Friday",
+  "questions": {
+    "has_due_date": {
+      "type": "noul",
+      "instructions": "Does the text mention a due date?"
+    }
+  }
+}

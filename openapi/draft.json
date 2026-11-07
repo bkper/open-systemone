@@ -1,0 +1,554 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Open System One",
+    "version": "draft",
+    "summary": "An open contract for System One model APIs.",
+    "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. This is the working draft; released versions are dated, immutable files.",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "paths": {
+    "/v1/systemone": {
+      "post": {
+        "summary": "Answer questions about a state",
+        "description": "Answers one or more named questions about the content in `state`. Question types can be mixed in one request. Each answer is returned under its question's name and has its question's type.",
+        "operationId": "systemone",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemOneRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part.",
+                "properties": {
+                  "request": {
+                    "description": "The JSON request, as the first part.",
+                    "contentMediaType": "application/json",
+                    "contentSchema": {
+                      "$ref": "#/components/schemas/SystemOneRequest"
+                    }
+                  }
+                },
+                "required": ["request"],
+                "additionalProperties": {
+                  "type": "string",
+                  "description": "An image, named by the asset part that uses it.",
+                  "contentMediaType": "image/*"
+                }
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Answers keyed by question name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOneResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was rejected. A server that does not support a question type or request parameter returns this status with code unsupported_question_type or unsupported_parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOneErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Any other error. Status codes and bodies are implementer-defined."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SystemOneRequest": {
+        "type": "object",
+        "title": "SystemOneRequest",
+        "description": "Content and named questions to evaluate together.",
+        "required": ["model", "state", "questions"],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Name or alias of the model to use."
+          },
+          "state": {
+            "$ref": "#/components/schemas/SystemOneContent",
+            "description": "The content all questions in this request refer to: a string, or structured data as an object or array."
+          },
+          "questions": {
+            "type": "object",
+            "description": "Questions about the state, each under a name you choose. The response uses the same names for the answers.",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneQuestion"
+            }
+          },
+          "assets": {
+            "type": "object",
+            "description": "Media assets keyed by an opaque placeholder, such as a per-image UUID. Each placeholder, wherever it appears as or inside a string in state, question instructions, or criteria, is replaced with the asset. Image assets require a model that accepts images.",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneAsset"
+            }
+          },
+          "reference_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The date that relative dates in the state are resolved against, as YYYY-MM-DD. A server that cannot honor it rejects the request with unsupported_parameter."
+          }
+        }
+      },
+      "SystemOneResponse": {
+        "type": "object",
+        "title": "SystemOneResponse",
+        "description": "Answers keyed by question name, with the model used and token usage.",
+        "required": ["model", "answers", "usage"],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Name of the model that answered. May differ from the alias in the request."
+          },
+          "answers": {
+            "type": "object",
+            "description": "Answers keyed by the question names in the request. Each answer's type matches its question's type.",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneAnswer"
+            }
+          },
+          "usage": {
+            "$ref": "#/components/schemas/SystemOneUsage"
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether the server shortened the state to fit the model's context. Present whenever the server knows."
+          },
+          "state_text": {
+            "type": "string",
+            "description": "The text the model read, when it differs from the state as sent, for example when structured state is serialized to text. Answer spans index into state_text when it is present."
+          }
+        }
+      },
+      "SystemOneUsage": {
+        "type": "object",
+        "title": "SystemOneUsage",
+        "description": "Token usage for the request.",
+        "required": ["input_tokens", "output_tokens"],
+        "properties": {
+          "input_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of input tokens used to evaluate the request."
+          },
+          "output_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of output tokens used to answer the questions."
+          }
+        }
+      },
+      "SystemOneContent": {
+        "title": "SystemOneContent",
+        "description": "Text or structured data: a string, an object, or an array.",
+        "anyOf": [
+          { "type": "string" },
+          { "type": "object", "additionalProperties": true },
+          { "type": "array", "items": true }
+        ]
+      },
+      "SystemOneAsset": {
+        "type": "object",
+        "title": "SystemOneAsset",
+        "description": "An image that replaces its placeholder: its bytes in data_base64 with their format, or, in a multipart request, the name of the image part that holds them.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "image",
+            "description": "Identifies an image asset."
+          },
+          "format": {
+            "type": "string",
+            "enum": ["png", "jpg", "jpeg"],
+            "description": "The image format, required with data_base64."
+          },
+          "data_base64": {
+            "type": "string",
+            "description": "Base64-encoded image data."
+          },
+          "part": {
+            "type": "string",
+            "description": "In a multipart request, the name of the image part this asset uses. With part, data_base64 is ignored."
+          }
+        }
+      },
+      "SystemOneQuestion": {
+        "title": "SystemOneQuestion",
+        "description": "A question about the state. The type selects the question shape and the answer shape.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/NoulQuestion" },
+          { "$ref": "#/components/schemas/ChoiceQuestion" },
+          { "$ref": "#/components/schemas/ScoreQuestion" },
+          { "$ref": "#/components/schemas/BoxQuestion" }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "noul": "#/components/schemas/NoulQuestion",
+            "choice": "#/components/schemas/ChoiceQuestion",
+            "score": "#/components/schemas/ScoreQuestion",
+            "box": "#/components/schemas/BoxQuestion"
+          }
+        }
+      },
+      "SystemOneAnswer": {
+        "title": "SystemOneAnswer",
+        "description": "An answer whose type matches its question's type.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/NoulAnswer" },
+          { "$ref": "#/components/schemas/ChoiceAnswer" },
+          { "$ref": "#/components/schemas/ScoreAnswer" },
+          { "$ref": "#/components/schemas/BoxAnswer" }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "noul": "#/components/schemas/NoulAnswer",
+            "choice": "#/components/schemas/ChoiceAnswer",
+            "score": "#/components/schemas/ScoreAnswer",
+            "box": "#/components/schemas/BoxAnswer"
+          }
+        }
+      },
+      "NoulQuestion": {
+        "type": "object",
+        "title": "NoulQuestion",
+        "description": "A yes/no question or statement, answered with the probability of yes or true.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "noul"
+          },
+          "instructions": {
+            "description": "The yes/no question or statement to evaluate.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "criteria": {
+            "description": "What counts as a yes or a no answer.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/NoulCriteria" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "NoulCriteria": {
+        "type": "object",
+        "title": "NoulCriteria",
+        "description": "Criteria defining what counts as a yes or a no answer.",
+        "properties": {
+          "true": {
+            "description": "What counts as a yes answer.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "false": {
+            "description": "What counts as a no answer.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "NoulAnswer": {
+        "type": "object",
+        "title": "NoulAnswer",
+        "description": "The probability of a yes answer or a true statement.",
+        "required": ["type", "noul"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "noul"
+          },
+          "noul": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability of a yes answer or a true statement, from 0 to 1."
+          }
+        }
+      },
+      "ChoiceQuestion": {
+        "type": "object",
+        "title": "ChoiceQuestion",
+        "description": "A question that selects one option from the choices in criteria.",
+        "required": ["type", "criteria"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "choice"
+          },
+          "instructions": {
+            "description": "What to decide when choosing an option.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "criteria": {
+            "type": "object",
+            "description": "Choice names mapped to descriptions of when each applies. A choice without a description is interpreted by its name alone.",
+            "minProperties": 1,
+            "maxProperties": 255,
+            "additionalProperties": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/SystemOneContent" },
+                { "type": "null" }
+              ]
+            }
+          }
+        }
+      },
+      "ChoiceAnswer": {
+        "type": "object",
+        "title": "ChoiceAnswer",
+        "description": "The selected choice, confidence, and the probability of each choice.",
+        "required": ["type", "choice", "confidence", "probabilities"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "choice"
+          },
+          "choice": {
+            "type": "string",
+            "description": "The name of the choice with the highest probability."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in the selected choice, from 0 to 1."
+          },
+          "probabilities": {
+            "type": "object",
+            "description": "Probability of each choice, keyed by choice name. Values sum to approximately 1.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneProbability"
+            }
+          }
+        }
+      },
+      "ScoreQuestion": {
+        "type": "object",
+        "title": "ScoreQuestion",
+        "description": "A question that rates the state on an ordered rubric.",
+        "required": ["type", "criteria"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "score"
+          },
+          "instructions": {
+            "description": "What to rate.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "criteria": {
+            "type": "array",
+            "description": "Ordered descriptions of the score levels, lowest first. Each description's position is its score, starting at zero.",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/SystemOneContent"
+            }
+          }
+        }
+      },
+      "ScoreAnswer": {
+        "type": "object",
+        "title": "ScoreAnswer",
+        "description": "An expected score with its rubric, confidence, and the probability of each level.",
+        "required": ["type", "score", "confidence", "legend", "probabilities"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "score"
+          },
+          "score": {
+            "type": "number",
+            "description": "Expected score: the probability-weighted average of the levels. May fall between levels."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in the score, from 0 to 1."
+          },
+          "legend": {
+            "type": "object",
+            "description": "The question's criteria keyed by their score level.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneContent"
+            }
+          },
+          "probabilities": {
+            "type": "object",
+            "description": "Probability of each score level, using the same keys as legend. Values sum to approximately 1.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneProbability"
+            }
+          }
+        }
+      },
+      "BoxQuestion": {
+        "type": "object",
+        "title": "BoxQuestion",
+        "description": "A question that locates what its instructions describe in the request's image.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "box"
+          },
+          "instructions": {
+            "description": "What to locate in the image.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "BoxAnswer": {
+        "type": "object",
+        "title": "BoxAnswer",
+        "description": "A located box with normalized edge coordinates and confidence.",
+        "required": ["type", "box", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "box"
+          },
+          "box": {
+            "$ref": "#/components/schemas/BoxCoordinates"
+          },
+          "confidence": {
+            "description": "Confidence in the box, from 0 to 1. Null when the model does not provide confidence.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneProbability" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "BoxCoordinates": {
+        "type": "object",
+        "title": "BoxCoordinates",
+        "description": "Box edges as fractions of the image's height and width, from 0 to 1. Vertical edges are measured from the top; horizontal edges from the left.",
+        "required": ["top", "bottom", "left", "right"],
+        "properties": {
+          "top": { "$ref": "#/components/schemas/SystemOneFraction" },
+          "bottom": { "$ref": "#/components/schemas/SystemOneFraction" },
+          "left": { "$ref": "#/components/schemas/SystemOneFraction" },
+          "right": { "$ref": "#/components/schemas/SystemOneFraction" }
+        }
+      },
+      "SystemOneProbability": {
+        "type": "number",
+        "title": "SystemOneProbability",
+        "description": "A probability or confidence from 0 to 1.",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "SystemOneFraction": {
+        "type": "number",
+        "title": "SystemOneFraction",
+        "description": "A fraction of an image dimension from 0 to 1.",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "SystemOneErrorResponse": {
+        "type": "object",
+        "title": "SystemOneErrorResponse",
+        "description": "An error envelope.",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/SystemOneError"
+          }
+        }
+      },
+      "SystemOneError": {
+        "type": "object",
+        "title": "SystemOneError",
+        "description": "An error. Two codes are standardized: unsupported_question_type, when the server does not support a question's type, and unsupported_parameter, when it cannot honor a request field or question setting. Both use type invalid_request_error and name the rejected field in param. Other codes are implementer-defined.",
+        "required": ["type", "code", "param", "message"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The error category, such as invalid_request_error."
+          },
+          "code": {
+            "description": "A machine-readable error code.",
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          },
+          "param": {
+            "description": "The request field that caused the error, as a path such as reference_date or questions.<name>.type.",
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "A human-readable description of the error."
+          }
+        },
+        "if": {
+          "required": ["code"],
+          "properties": {
+            "code": {
+              "enum": ["unsupported_question_type", "unsupported_parameter"]
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "type": {
+              "const": "invalid_request_error"
+            },
+            "param": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

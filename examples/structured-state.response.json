@@ -1,0 +1,30 @@
+{
+  "model": "example-model-2026-03-01",
+  "answers": {
+    "refund_request": {
+      "type": "noul",
+      "noul": 0.97
+    },
+    "urgency": {
+      "type": "score",
+      "score": 1.2,
+      "confidence": 0.6,
+      "legend": {
+        "0": "Can wait",
+        "1": "Needs attention this week",
+        "2": "Needs attention today"
+      },
+      "probabilities": {
+        "0": 0.1,
+        "1": 0.6,
+        "2": 0.3
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 96,
+    "output_tokens": 8
+  },
+  "truncated": false,
+  "state_text": "{\"subject\":\"Duplicate charge\",\"message\":\"I was charged twice yesterday. Please refund one of the charges.\"}"
+}

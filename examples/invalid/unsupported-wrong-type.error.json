@@ -1,0 +1,8 @@
+{
+  "error": {
+    "type": "server_error",
+    "code": "unsupported_parameter",
+    "param": "reference_date",
+    "message": "Cannot honor reference_date."
+  }
+}

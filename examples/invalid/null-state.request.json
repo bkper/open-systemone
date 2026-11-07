@@ -1,0 +1,10 @@
+{
+  "model": "example-model",
+  "state": null,
+  "questions": {
+    "greeting": {
+      "type": "noul",
+      "instructions": "Is this a greeting?"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "model": "example-model",
+  "state": "Hello",
+  "questions": {
+    "mood": {
+      "type": "sentiment",
+      "instructions": "What is the mood?"
+    }
+  }
+}

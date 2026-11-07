@@ -1,0 +1,14 @@
+{
+  "model": "example-model",
+  "answers": {
+    "tone": {
+      "type": "choice",
+      "choice": "calm",
+      "confidence": 0.7
+    }
+  },
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1
+  }
+}

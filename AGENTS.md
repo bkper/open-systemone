@@ -10,7 +10,8 @@ Public, neutral specification for System One model APIs (`POST /v1/systemone`). 
 - `LICENSE`: Apache-2.0
 - `openapi/draft.json`: the working draft
 - `openapi/<YYYY-MM-DD>.json`: released versions
-- `examples/`: request and response examples
+- `examples/`: request, response, and error examples; `examples/invalid/` holds examples that must fail
+- `scripts/validate.js`: validates the examples against the contract
 
 ## Rules
 
@@ -24,7 +25,16 @@ Public, neutral specification for System One model APIs (`POST /v1/systemone`). 
 
 ## Validation
 
-Every file in `examples/` must validate against the schema. CI runs this check. Run the same check locally before committing, using the command defined in the repository's CI workflow.
+Run before committing:
+
+```bash
+bun install
+bun run validate
+```
+
+It checks every example against `openapi/draft.json` (or the latest dated file when there is no draft): files outside `examples/invalid/` must pass, files inside must fail, and a request/response pair must have matching question names and types. The file suffix selects the schema (`.request.json`, `.response.json`, `.error.json`); see `examples/README.md`. CI runs the same command on every push and pull request (`.github/workflows/validate.yml`).
+
+When adding a question or answer type, add a valid example and at least one invalid example for it.
 
 ## Commits
 

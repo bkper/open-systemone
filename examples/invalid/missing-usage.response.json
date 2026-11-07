@@ -1,0 +1,9 @@
+{
+  "model": "example-model",
+  "answers": {
+    "billing": {
+      "type": "noul",
+      "noul": 0.9
+    }
+  }
+}
