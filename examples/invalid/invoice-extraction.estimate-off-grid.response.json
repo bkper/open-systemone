@@ -1,0 +1,74 @@
+{
+  "model": "clairic",
+  "answers": {
+    "invoice_number": {
+      "type": "text",
+      "value": "INV-2291",
+      "p_null": 3.8e-10,
+      "confidence": 1,
+      "guess": "INV-2291",
+      "span": [
+        8,
+        16
+      ]
+    },
+    "due_date": {
+      "type": "date",
+      "value": "2026-10-02",
+      "p_null": 1.9e-08,
+      "confidence": 0.9999,
+      "guess": "2026-10-02"
+    },
+    "total": {
+      "type": "number",
+      "value": 1080,
+      "p_null": 2.3e-08,
+      "confidence": 0.9999,
+      "guess": 1080
+    },
+    "contacts": {
+      "type": "list",
+      "value": [
+        "Dana Ruiz",
+        "Priya Shah"
+      ],
+      "confidence": 0.9999,
+      "spans": [
+        [
+          120,
+          129
+        ],
+        [
+          131,
+          141
+        ]
+      ]
+    },
+    "po_number": {
+      "type": "text",
+      "value": null,
+      "p_null": 1,
+      "confidence": 0.9995,
+      "guess": "INV-2291",
+      "span": [
+        8,
+        16
+      ]
+    },
+    "days_to_pay": {
+      "type": "estimate",
+      "value": 30.5,
+      "median": 30,
+      "p10": 21,
+      "p90": 38,
+      "mean": 29.535,
+      "p_below": 5.9e-06,
+      "p_above": 1.2e-05
+    }
+  },
+  "usage": {
+    "input_tokens": 655,
+    "output_tokens": 0
+  },
+  "truncated": false
+}

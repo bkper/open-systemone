@@ -1,0 +1,20 @@
+{
+  "model": "example-model",
+  "answers": {
+    "field": {
+      "type": "text",
+      "value": "A-1",
+      "p_null": 0.01,
+      "confidence": 0.99,
+      "guess": "A-1",
+      "span": [
+        6,
+        9.5
+      ]
+    }
+  },
+  "usage": {
+    "input_tokens": 50,
+    "output_tokens": 0
+  }
+}

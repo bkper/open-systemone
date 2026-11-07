@@ -1,0 +1,33 @@
+{
+  "model": "example-model",
+  "state": "Your visit with Dr. Lee is on Tuesday, March 17 at 2:30 pm and takes about 45 minutes.",
+  "reference_date": "2026-03-12",
+  "questions": {
+    "doctor": {
+      "type": "text",
+      "instructions": "Name of the doctor",
+      "null_threshold": 0.3
+    },
+    "visit_date": {
+      "type": "date"
+    },
+    "start_time": {
+      "type": "time",
+      "instructions": "When the visit starts"
+    },
+    "starts_at": {
+      "type": "datetime",
+      "instructions": "Date and time the visit starts"
+    },
+    "length": {
+      "type": "duration",
+      "unit": "minutes",
+      "integer": true
+    },
+    "room": {
+      "type": "text",
+      "instructions": "Room number",
+      "null_threshold": 0.3
+    }
+  }
+}

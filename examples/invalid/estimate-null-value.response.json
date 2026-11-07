@@ -1,0 +1,16 @@
+{
+  "model": "example-model",
+  "answers": {
+    "field": {
+      "type": "estimate",
+      "value": null,
+      "median": 30,
+      "p10": 21,
+      "p90": 38
+    }
+  },
+  "usage": {
+    "input_tokens": 50,
+    "output_tokens": 0
+  }
+}

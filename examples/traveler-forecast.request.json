@@ -1,0 +1,15 @@
+{
+  "model": "clairic",
+  "state": "Daily number of people screened at TSA checkpoints at US airports.\ndate,weekday,travelers\n2026-07-16,Thu,2850229\n...\n2026-10-13,Tue,2353356\nForecast date: 2026-10-14 (Wed)",
+  "questions": {
+    "travelers": {
+      "type": "forecast",
+      "horizon": 1,
+      "interval": "day",
+      "min": 500000,
+      "max": 4000000,
+      "scale": "log",
+      "instructions": "Number of people screened tomorrow"
+    }
+  }
+}

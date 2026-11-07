@@ -32,7 +32,7 @@ bun install
 bun run validate
 ```
 
-It checks every example against `openapi/draft.json` (or the latest dated file when there is no draft): files outside `examples/invalid/` must pass, files inside must fail, and a request/response pair must have matching question names and types. The file suffix selects the schema (`.request.json`, `.response.json`, `.error.json`); see `examples/README.md`. CI runs the same command on every push and pull request (`.github/workflows/validate.yml`).
+It checks every example against `openapi/draft.json` (or the latest dated file when there is no draft): files outside `examples/invalid/` must pass, files inside must fail, and a request/response pair must have matching question names and types and pass the cross-checks JSON Schema cannot express (choice in criteria, null threshold, span text, estimate bounds, forecast horizon). The file suffix selects the schema (`.request.json`, `.response.json`, `.error.json`); see `examples/README.md`. CI runs the same command on every push and pull request (`.github/workflows/validate.yml`).
 
 When adding a question or answer type, add a valid example and at least one invalid example for it.
 

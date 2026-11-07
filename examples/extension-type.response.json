@@ -1,0 +1,22 @@
+{
+  "model": "example-model",
+  "answers": {
+    "resolved": {
+      "type": "noul",
+      "noul": 0.08
+    },
+    "sentiment": {
+      "type": "acme:sentiment",
+      "label": "mixed",
+      "probabilities": {
+        "negative": 0.3,
+        "mixed": 0.6,
+        "positive": 0.1
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 64,
+    "output_tokens": 4
+  }
+}

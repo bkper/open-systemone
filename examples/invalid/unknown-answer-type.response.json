@@ -1,0 +1,13 @@
+{
+  "model": "example-model",
+  "answers": {
+    "field": {
+      "type": "sentiment",
+      "label": "calm"
+    }
+  },
+  "usage": {
+    "input_tokens": 50,
+    "output_tokens": 0
+  }
+}

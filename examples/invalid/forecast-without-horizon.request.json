@@ -1,0 +1,11 @@
+{
+  "model": "example-model",
+  "state": "Order A-1 was paid on 2026-03-01.",
+  "questions": {
+    "field": {
+      "type": "forecast",
+      "min": 0,
+      "max": 100
+    }
+  }
+}

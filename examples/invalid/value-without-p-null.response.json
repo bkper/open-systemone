@@ -1,0 +1,14 @@
+{
+  "model": "example-model",
+  "answers": {
+    "field": {
+      "type": "number",
+      "value": 12,
+      "confidence": 0.99
+    }
+  },
+  "usage": {
+    "input_tokens": 50,
+    "output_tokens": 0
+  }
+}

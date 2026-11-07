@@ -1,0 +1,15 @@
+{
+  "model": "example-model",
+  "answers": {
+    "field": {
+      "type": "time",
+      "value": "2:30 pm",
+      "p_null": 0.01,
+      "confidence": 0.99
+    }
+  },
+  "usage": {
+    "input_tokens": 50,
+    "output_tokens": 0
+  }
+}

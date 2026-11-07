@@ -1,0 +1,34 @@
+{
+  "model": "clairic",
+  "state": "Hi, order A-88412 arrived on Sept 28, 2026 with a cracked screen and a dented corner. I paid $649.00 plus $52.10 tax. It's now Oct 9, 2026 and I'd like this fixed or refunded. Thanks, Dana",
+  "questions": {
+    "order_id": {
+      "type": "text",
+      "instructions": "Order number"
+    },
+    "delivered_on": {
+      "type": "date",
+      "instructions": "Delivery date"
+    },
+    "amount_paid": {
+      "type": "number",
+      "decimals": 2,
+      "unit": "USD",
+      "instructions": "Total paid including tax"
+    },
+    "days_since_delivery": {
+      "type": "duration",
+      "unit": "days",
+      "integer": true,
+      "instructions": "Days from delivery to the date the customer wrote"
+    },
+    "damage": {
+      "type": "list",
+      "items": "text",
+      "instructions": "Each kind of damage described"
+    },
+    "tracking_number": {
+      "type": "text"
+    }
+  }
+}

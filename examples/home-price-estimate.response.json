@@ -1,0 +1,19 @@
+{
+  "model": "clairic",
+  "answers": {
+    "sale_price": {
+      "type": "estimate",
+      "value": 418000,
+      "median": 415000,
+      "p10": 370000,
+      "p90": 470000,
+      "p_below": 0.0,
+      "p_above": 0.0
+    }
+  },
+  "usage": {
+    "input_tokens": 260,
+    "output_tokens": 0
+  },
+  "truncated": false
+}

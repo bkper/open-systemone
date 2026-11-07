@@ -1,0 +1,10 @@
+{
+  "model": "example-model",
+  "state": "Order A-1 was paid on 2026-03-01.",
+  "questions": {
+    "field": {
+      "type": "list",
+      "instructions": "Order IDs"
+    }
+  }
+}

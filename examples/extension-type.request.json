@@ -1,0 +1,19 @@
+{
+  "model": "example-model",
+  "state": "The replacement arrived quickly, but it is the wrong color.",
+  "questions": {
+    "resolved": {
+      "type": "noul",
+      "instructions": "Is the customer's problem resolved?"
+    },
+    "sentiment": {
+      "type": "acme:sentiment",
+      "instructions": "How does the customer feel?",
+      "labels": [
+        "negative",
+        "mixed",
+        "positive"
+      ]
+    }
+  }
+}

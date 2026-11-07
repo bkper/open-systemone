@@ -1,0 +1,61 @@
+{
+  "model": "example-model-2026-03-01",
+  "answers": {
+    "doctor": {
+      "type": "text",
+      "value": "Dr. Lee",
+      "p_null": 0.002,
+      "confidence": 0.98,
+      "guess": "Dr. Lee",
+      "span": [
+        16,
+        23
+      ]
+    },
+    "visit_date": {
+      "type": "date",
+      "value": "2026-03-17",
+      "p_null": 0.001,
+      "confidence": 0.97,
+      "guess": "2026-03-17"
+    },
+    "start_time": {
+      "type": "time",
+      "value": "14:30",
+      "p_null": 0.001,
+      "confidence": 0.99,
+      "guess": "14:30"
+    },
+    "starts_at": {
+      "type": "datetime",
+      "value": "2026-03-17T14:30:00",
+      "p_null": 0.001,
+      "confidence": 0.96,
+      "guess": "2026-03-17T14:30:00"
+    },
+    "length": {
+      "type": "duration",
+      "value": 45,
+      "unit": "minutes",
+      "p_null": 0.003,
+      "confidence": 0.95,
+      "guess": 45
+    },
+    "room": {
+      "type": "text",
+      "value": null,
+      "p_null": 0.42,
+      "confidence": 0.3,
+      "guess": "17",
+      "span": [
+        45,
+        47
+      ]
+    }
+  },
+  "usage": {
+    "input_tokens": 140,
+    "output_tokens": 0
+  },
+  "truncated": false
+}

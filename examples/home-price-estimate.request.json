@@ -1,0 +1,14 @@
+{
+  "model": "clairic",
+  "state": "Comparable sales:\nsqft,beds,year_built,neighborhood,sale_price\n1450,3,1998,Elm Park,412000\n2100,4,2006,Elm Park,585000\n980,2,1975,Riverside,265000\n1600,3,2003,Elm Park,449000\n1300,3,1990,Riverside,318000\n\nSubject property:\nsqft,beds,year_built,neighborhood\n1620,3,2001,Elm Park",
+  "questions": {
+    "sale_price": {
+      "type": "estimate",
+      "unit": "USD",
+      "min": 50000,
+      "max": 5000000,
+      "scale": "log",
+      "step": 1000
+    }
+  }
+}

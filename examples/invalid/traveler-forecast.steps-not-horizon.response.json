@@ -1,0 +1,27 @@
+{
+  "model": "clairic",
+  "answers": {
+    "travelers": {
+      "type": "forecast",
+      "steps": [
+        {
+          "value": 2416117,
+          "median": 2419283,
+          "p10": 2270774,
+          "p90": 2556769
+        },
+        {
+          "value": 2600000,
+          "median": 2600000,
+          "p10": 2450000,
+          "p90": 2750000
+        }
+      ]
+    }
+  },
+  "usage": {
+    "input_tokens": 2310,
+    "output_tokens": 0
+  },
+  "truncated": false
+}

@@ -2,10 +2,13 @@
 //
 // The file suffix selects the schema: *.request.json, *.response.json, *.error.json.
 // Files under examples/invalid/ must fail validation; all others must pass.
-// A request and response that share a name must have matching question names and types.
+// A response is checked against its request: the request with the same name up to the
+// first dot, in the response's directory or in examples/. The checks cover rules JSON
+// Schema cannot express: matching question names and types, choice in criteria, null
+// threshold, span text, list spans, estimate bounds and grid, and forecast horizon.
 
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join, relative } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
@@ -18,6 +21,9 @@ const SCHEMA_BY_SUFFIX = {
     '.response.json': 'SystemOneResponse',
     '.error.json': 'SystemOneErrorResponse',
 };
+
+const VALUE_TYPES = new Set(['text', 'number', 'date', 'time', 'datetime', 'duration']);
+const DEFAULT_NULL_THRESHOLD = 0.5;
 
 function contractPath() {
     const files = readdirSync(join(root, 'openapi')).filter(file => file.endsWith('.json')).sort();
@@ -64,26 +70,92 @@ function schemaFor(path) {
     return suffix ? SCHEMA_BY_SUFFIX[suffix] : undefined;
 }
 
-function pairProblems(requestPath) {
-    const responsePath = requestPath.replace(/\.request\.json$/, '.response.json');
-    let response;
-    try {
-        response = readJson(responsePath);
-    } catch {
-        return [];
+function requestFor(responsePath) {
+    const name = `${basename(responsePath).split('.')[0]}.request.json`;
+    const path = [dirname(responsePath), examplesDir].map(dir => join(dir, name)).find(existsSync);
+    return path ? readJson(path) : undefined;
+}
+
+function spanProblems([start, end], expected, text) {
+    if (text === undefined) return ['a span needs a string state or a state_text'];
+    const chars = Array.from(text);
+    if (start > end || end > chars.length) return [`span [${start}, ${end}] is outside the text`];
+    const covered = chars.slice(start, end).join('');
+    if (expected === undefined || covered === expected) return [];
+    return [`span [${start}, ${end}] covers '${covered}', expected '${expected}'`];
+}
+
+function onGrid(value, min, step) {
+    const steps = (value - min) / step;
+    return Math.abs(steps - Math.round(steps)) < 1e-9;
+}
+
+function distributionProblems({ min, max, step }, distribution) {
+    const problems = [];
+    const { value, median, p10, p90, quantiles = [] } = distribution;
+    for (const v of [value, median, p10, p90, ...quantiles]) {
+        if (typeof v !== typeof min || v < min || v > max) problems.push(`${v} is outside [${min}, ${max}]`);
     }
-    const questions = readJson(requestPath).questions;
+    if (typeof step === 'number' && typeof min === 'number') {
+        for (const v of [value, median, p10, p90]) {
+            if (!onGrid(v, min, step)) problems.push(`${v} is not on the grid ${min} + k * ${step}`);
+        }
+    }
+    if (!(p10 <= median && median <= p90)) problems.push('expected p10 <= median <= p90');
+    return problems;
+}
+
+function answerProblems(question, answer, text) {
+    const problems = [];
+    if (answer.type === 'choice' && !Object.hasOwn(question.criteria, answer.choice)) {
+        problems.push(`choice '${answer.choice}' is not in the question's criteria`);
+    }
+    if (VALUE_TYPES.has(answer.type)) {
+        const threshold = question.null_threshold ?? DEFAULT_NULL_THRESHOLD;
+        if ((answer.value === null) !== answer.p_null > threshold) {
+            problems.push(`value must be null exactly when p_null ${answer.p_null} is above ${threshold}`);
+        }
+        if (answer.span) {
+            problems.push(...spanProblems(answer.span, answer.type === 'text' ? answer.guess : undefined, text));
+        }
+    }
+    if (answer.type === 'list') {
+        const textItems = question.items === 'text';
+        if (textItems && !answer.spans) problems.push('text items need spans');
+        if (answer.spans && answer.spans.length !== answer.value.length) {
+            problems.push(`${answer.spans.length} spans for ${answer.value.length} items`);
+        }
+        (answer.spans ?? []).forEach((span, i) => {
+            problems.push(...spanProblems(span, textItems ? answer.value[i] : undefined, text));
+        });
+    }
+    if (answer.type === 'estimate') problems.push(...distributionProblems(question, answer));
+    if (answer.type === 'forecast') {
+        if (answer.steps.length !== question.horizon) {
+            problems.push(`${answer.steps.length} steps, expected horizon ${question.horizon}`);
+        }
+        for (const step of answer.steps) problems.push(...distributionProblems(question, step));
+    }
+    return problems;
+}
+
+function pairProblems(request, response) {
+    const { questions } = request;
     const problems = [];
     const questionNames = Object.keys(questions).sort();
     const answerNames = Object.keys(response.answers).sort();
     if (questionNames.join() !== answerNames.join()) {
         problems.push(`answer names [${answerNames}] do not match question names [${questionNames}]`);
     }
-    for (const name of questionNames) {
-        const answer = response.answers[name];
-        if (answer && answer.type !== questions[name].type) {
-            problems.push(`answer '${name}' has type ${answer.type}, question has type ${questions[name].type}`);
+    const text = response.state_text ?? (typeof request.state === 'string' ? request.state : undefined);
+    for (const [name, answer] of Object.entries(response.answers)) {
+        const question = questions[name];
+        if (!question) continue;
+        if (answer.type !== question.type) {
+            problems.push(`answer '${name}' has type ${answer.type}, question has type ${question.type}`);
+            continue;
         }
+        problems.push(...answerProblems(question, answer, text).map(problem => `answer '${name}': ${problem}`));
     }
     return problems;
 }
@@ -101,16 +173,19 @@ for (const path of listJsonFiles(examplesDir).sort()) {
         continue;
     }
     const validate = validators[schema];
-    const valid = validate(readJson(path));
+    const example = readJson(path);
+    const problems = validate(example) ? [] : [`fails ${schema}\n${JSON.stringify(validate.errors, null, 2)}`];
+    if (problems.length === 0 && schema === 'SystemOneResponse') {
+        const request = requestFor(path);
+        if (request) problems.push(...pairProblems(request, example));
+    }
     const mustFail = path.startsWith(invalidDir);
     checked++;
 
-    if (mustFail && valid) {
-        failures.push(`${name}: expected to fail ${schema}, but it passed`);
-    } else if (!mustFail && !valid) {
-        failures.push(`${name}: fails ${schema}\n${JSON.stringify(validate.errors, null, 2)}`);
-    } else if (!mustFail && schema === 'SystemOneRequest') {
-        failures.push(...pairProblems(path).map(problem => `${name}: ${problem}`));
+    if (mustFail && problems.length === 0) {
+        failures.push(`${name}: expected to fail, but it passed`);
+    } else if (!mustFail) {
+        failures.push(...problems.map(problem => `${name}: ${problem}`));
     }
 }
 
