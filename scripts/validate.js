@@ -11,6 +11,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { contractPath } from './contract.js';
 
 const root = join(import.meta.dirname, '..');
 const examplesDir = join(root, 'examples');
@@ -24,13 +25,6 @@ const SCHEMA_BY_SUFFIX = {
 
 const VALUE_TYPES = new Set(['text', 'number', 'date', 'time', 'datetime', 'duration']);
 const DEFAULT_NULL_THRESHOLD = 0.5;
-
-function contractPath() {
-    const files = readdirSync(join(root, 'openapi')).filter(file => file.endsWith('.json')).sort();
-    const file = files.includes('draft.json') ? 'draft.json' : files.at(-1);
-    if (!file) throw new Error('No OpenAPI file found in openapi/');
-    return join(root, 'openapi', file);
-}
 
 function listJsonFiles(dir) {
     return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -160,7 +154,7 @@ function pairProblems(request, response) {
     return problems;
 }
 
-const document = readJson(contractPath());
+const document = readJson(contractPath(root));
 const validators = createValidators(document);
 const failures = [];
 let checked = 0;
@@ -195,4 +189,4 @@ if (failures.length > 0) {
     console.error(failures.join('\n'));
     process.exit(1);
 }
-console.log(`Validated ${checked} examples against ${relative(root, contractPath())}`);
+console.log(`Validated ${checked} examples against ${relative(root, contractPath(root))}`);

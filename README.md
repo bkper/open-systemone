@@ -39,9 +39,9 @@ Open System One stays close to TypeSafe's format and adds only what is needed to
 ## Repository
 
 - `README.md`: this overview
-- `SPEC.md`: normative rules (MUST/SHOULD)
+- [SPEC.md](SPEC.md): the normative rules (MUST/SHOULD), including the answer guarantees, errors, extension types, and versioning
 - [openapi/draft.json](openapi/draft.json): the contract as hand-written OpenAPI 3.1 JSON, the working draft until the first dated release
-- [examples/](examples/README.md): request, response, and error examples, validated against the contract in CI with `bun run validate`
+- [examples/](examples/README.md): request, response, and error examples, validated against the contract in CI with `bun run validate`, which also checks that SPEC.md agrees with the contract
 - [CHANGELOG.md](CHANGELOG.md): release history
 
 ## License

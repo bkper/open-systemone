@@ -1122,7 +1122,7 @@
       "SystemOneSpan": {
         "type": "array",
         "title": "SystemOneSpan",
-        "description": "Where guess was read in the input: a half-open range [start, end) of character offsets, counted in Unicode code points, into state, or into the response's state_text when present.",
+        "description": "Where guess was read in the input: a half-open range [start, end) of character offsets, counted in Unicode code points (unit to verify against implementations), into state, or into the response's state_text when present.",
         "minItems": 2,
         "maxItems": 2,
         "items": {
