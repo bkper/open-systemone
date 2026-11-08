@@ -51,6 +51,17 @@ header a {
     font-weight: 600;
 }
 
+.github {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.github:hover {
+    text-decoration: none;
+    opacity: 0.7;
+}
+
 .page {
     display: grid;
     grid-template-columns: 180px minmax(0, 1fr);
@@ -189,5 +200,9 @@ footer {
 
     h1 {
         font-size: 30px;
+    }
+
+    .github span {
+        display: none;
     }
 }
