@@ -49,6 +49,16 @@ describe('built site', () => {
         }
     });
 
+    it('gives every page a 1200 by 630 share image', () => {
+        for (const page of files(dist).filter(path => path.endsWith('.html'))) {
+            const html = readFileSync(page, 'utf8');
+            const image = html.match(/<meta property="og:image" content="https:\/\/opensystemone\.org(\/[^"]+)"/)?.[1];
+            expect({ page: relative(dist, page), image: image ?? null }).toEqual({ page: relative(dist, page), image: '/og.png' });
+        }
+        const png = readFileSync(join(dist, 'og.png'));
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+    });
+
     it('links only to pages and files that exist', () => {
         const broken: string[] = [];
         for (const page of files(dist).filter(path => path.endsWith('.html'))) {
