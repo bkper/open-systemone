@@ -31,6 +31,24 @@ describe('built site', () => {
         }
     });
 
+    it('publishes llms.txt with links that resolve', () => {
+        const llms = readFileSync(join(dist, 'llms.txt'), 'utf8');
+        expect(llms.startsWith('# Open System One\n')).toBe(true);
+        const links = [...llms.matchAll(/\]\(https:\/\/opensystemone\.org(\/[^)#]*)/g)].map(match => match[1] ?? '');
+        expect(links.length).toBeGreaterThan(0);
+        expect(links.filter(link => !resolves(link))).toEqual([]);
+    });
+
+    it('serves Markdown pages with absolute links only', () => {
+        for (const page of ['index.md', 'specification.md', 'adapters.md', 'changelog.md']) {
+            const markdown = readFileSync(join(dist, page), 'utf8');
+            const relative = [...markdown.matchAll(/\]\(([^)]+)\)/g)]
+                .map(match => match[1] ?? '')
+                .filter(href => !/^(https?:|mailto:|#)/.test(href));
+            expect({ page, relative }).toEqual({ page, relative: [] });
+        }
+    });
+
     it('links only to pages and files that exist', () => {
         const broken: string[] = [];
         for (const page of files(dist).filter(path => path.endsWith('.html'))) {

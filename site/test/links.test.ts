@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { siteHref } from '../src/lib/links.ts';
+import { markdownForLlms, siteHref } from '../src/lib/links.ts';
 
 describe('siteHref', () => {
     it('maps the spec documents to their pages', () => {
@@ -25,5 +25,23 @@ describe('siteHref', () => {
         expect(siteHref('/adapters')).toBe('/adapters');
         expect(siteHref('https://www.openresponses.org')).toBe('https://www.openresponses.org');
         expect(siteHref('mailto:someone@example.com')).toBe('mailto:someone@example.com');
+    });
+});
+
+describe('markdownForLlms', () => {
+    it('drops front matter and makes repository and site links absolute', () => {
+        const markdown = [
+            '---',
+            'title: Adapters',
+            '---',
+            '',
+            'See the [changelog](CHANGELOG.md), the [release](openapi/2026-11-07.json),',
+            'the [errors](/specification#errors), [below](#limits), and [Open Responses](https://www.openresponses.org).',
+        ].join('\n');
+
+        expect(markdownForLlms(markdown)).toBe([
+            'See the [changelog](https://opensystemone.org/changelog.md), the [release](https://opensystemone.org/openapi/2026-11-07.json),',
+            'the [errors](https://opensystemone.org/specification.md#errors), [below](#limits), and [Open Responses](https://www.openresponses.org).',
+        ].join('\n'));
     });
 });
