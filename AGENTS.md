@@ -14,6 +14,7 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - `scripts/validate.js`: validates the examples against the contract
 - `scripts/check-spec.js`: checks that `SPEC.md` agrees with the contract
 - `scripts/check-releases.js`: checks that released files never change
+- `site/`: the website at https://opensystemone.org (Astro, static), deployed by `.github/workflows/deploy.yml` on push to `main`
 
 ## Rules
 
@@ -23,7 +24,9 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - `SPEC.md` and the OpenAPI file must agree. Change both in the same commit.
 - No Bkper-specific or provider-specific names in the contract. Non-core types use an `owner:type` prefix.
 - Stay a strict superset of TypeSafe's format. Do not change TypeSafe's existing request or answer shapes.
-- Keep it thin. No website, no marketing copy.
+- Keep it thin. No marketing copy.
+- The site presents the spec; it does not define it. It renders `SPEC.md` and `CHANGELOG.md` and serves the files in `openapi/` byte for byte, so it never holds a second copy. Its own pages are the overview and the adapters.
+- Never deploy the site from a local machine. Run `cd site && bun install && bun run test` before committing site changes.
 - The contract fixes no endpoint path. Its operation is `components.pathItems.SystemOne`; implementers serve it at a URL they choose.
 - Every relative link in the markdown files must resolve to an existing file.
 

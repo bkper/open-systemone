@@ -1,0 +1,14 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    // A static site: Workers static assets only, no Worker code.
+    "name": "opensystemone",
+    "compatibility_date": "2026-11-01",
+    "assets": {
+        "directory": "./dist",
+        "html_handling": "drop-trailing-slash",
+        "not_found_handling": "404-page"
+    },
+    "routes": [{ "pattern": "opensystemone.org", "custom_domain": true }],
+    "workers_dev": false,
+    "preview_urls": false
+}

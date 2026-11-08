@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { typeLabel, type Contract } from '../lib/schema.ts';
+
+const contracts = import.meta.glob<Contract>('../../../openapi/*.json', { import: 'default', eager: true });
+const releases = Object.entries(contracts)
+    .filter(([path]) => /\/\d{4}-\d{2}-\d{2}\.json$/.test(path))
+    .sort(([a], [b]) => a.localeCompare(b));
+const latest = releases.at(-1)?.[1];
+if (!latest) throw new Error('No released OpenAPI file in openapi/');
+const version = latest.info.version;
+const schemas = Object.entries(latest.components.schemas);
+---
+
+<Layout title="Reference" description={`The schemas of the Open System One ${version} release.`}>
+    <h1>Reference</h1>
+    <p>
+        The schemas of the <strong>{version}</strong> release. Download it as
+        <a href={`/openapi/${version}.json`}>openapi/{version}.json</a>, or see the
+        <a href="/openapi/draft.json">working draft</a>.
+    </p>
+    {schemas.map(([name, schema]) => (
+        <section>
+            <h3 id={name}>{name}</h3>
+            {schema.description && <p>{schema.description}</p>}
+            {schema.properties ? (
+                <table>
+                    <thead>
+                        <tr><th>Property</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        {Object.entries(schema.properties).map(([property, value]) => (
+                            <tr>
+                                <td><code>{property}</code></td>
+                                <td set:html={typeLabel(value)} />
+                                <td>{schema.required?.includes(property) ? 'yes' : ''}</td>
+                                <td>{value.description ?? ''}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ) : (
+                <p>Type: <span set:html={typeLabel(schema)} /></p>
+            )}
+        </section>
+    ))}
+</Layout>

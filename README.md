@@ -2,6 +2,8 @@
 
 An open specification for System One model APIs: what [Open Responses](https://www.openresponses.org) is for LLMs, for System One models.
 
+Website: [opensystemone.org](https://opensystemone.org)
+
 Open System One is independent. It is not affiliated with TypeSafe or Open Responses.
 
 > **Status: early draft.** The 2026-11-07 release is a first snapshot, implemented by one gateway against three models. Expect breaking changes in the next releases. A dated release never changes, so pin one if you depend on it.
