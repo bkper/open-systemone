@@ -6,9 +6,9 @@ Open System One is independent. It is not affiliated with TypeSafe or Open Respo
 
 ## Purpose
 
-System One models answer typed questions about an input, the state, directly. They return structured answers with probabilities instead of generated text. Some make decisions (yes/no, choice, score); others extract values (text, numbers, dates, lists, estimates).
+System One models answer typed questions about an input, the state, directly. They return structured answers with probabilities instead of generated text. Decision questions judge the state (yes/no, choice, score); extraction questions read values from it (text, numbers, dates, lists, estimates). The client's code makes the decisions.
 
-Open System One defines one HTTP contract, `POST /v1/systemone`, that any provider or gateway can implement for both kinds of model:
+Open System One defines one HTTP contract, `POST /v1/systemone`, that any provider or gateway can implement for every question type:
 
 - Request: `{model, state, questions, assets}`
 - Response: `{model, answers, usage}`
