@@ -4,7 +4,8 @@ Each release is a dated, immutable OpenAPI file in `openapi/`. Entries describe 
 
 ## Unreleased
 
-No changes since 2026-11-07.
+- **Breaking:** the contract fixes no endpoint path. The operation moves from `paths./v1/systemone` to `components.pathItems.SystemOne`, served as `POST` at a URL the implementer chooses. Clients take the full endpoint URL as configuration.
+- `model` stays required when an implementer serves a single model at its URL, and an implementer rejects a model it does not serve.
 
 ## 2026-11-07
 

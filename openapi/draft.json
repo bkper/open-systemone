@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Open System One",
-    "version": "2026-11-07",
+    "version": "draft",
     "summary": "An open contract for System One model APIs.",
     "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. Releases are dated, immutable files; version is the release date.",
     "license": {
@@ -10,77 +10,78 @@
       "identifier": "Apache-2.0"
     }
   },
-  "paths": {
-    "/v1/systemone": {
-      "post": {
-        "summary": "Answer questions about a state",
-        "description": "Answers one or more named questions about the content in `state`. Question types can be mixed in one request. Each answer is returned under its question's name and has its question's type.",
-        "operationId": "systemone",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SystemOneRequest"
-              }
-            },
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part.",
-                "properties": {
-                  "request": {
-                    "description": "The JSON request, as the first part.",
-                    "contentMediaType": "application/json",
-                    "contentSchema": {
-                      "$ref": "#/components/schemas/SystemOneRequest"
-                    }
-                  }
-                },
-                "required": ["request"],
-                "additionalProperties": {
-                  "type": "string",
-                  "description": "An image, named by the asset part that uses it.",
-                  "contentMediaType": "image/*"
+  "components": {
+    "pathItems": {
+      "SystemOne": {
+        "description": "The System One operation. The contract fixes no URL: an implementer serves this operation at a URL it chooses, and a client takes the full URL as configuration.",
+        "post": {
+          "summary": "Answer questions about a state",
+          "description": "Answers one or more named questions about the content in `state`. Question types can be mixed in one request. Each answer is returned under its question's name and has its question's type.",
+          "operationId": "systemone",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOneRequest"
                 }
               },
-              "encoding": {
-                "request": {
-                  "contentType": "application/json"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Answers keyed by question name.",
-            "content": {
-              "application/json": {
+              "multipart/form-data": {
                 "schema": {
-                  "$ref": "#/components/schemas/SystemOneResponse"
+                  "type": "object",
+                  "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part.",
+                  "properties": {
+                    "request": {
+                      "description": "The JSON request, as the first part.",
+                      "contentMediaType": "application/json",
+                      "contentSchema": {
+                        "$ref": "#/components/schemas/SystemOneRequest"
+                      }
+                    }
+                  },
+                  "required": ["request"],
+                  "additionalProperties": {
+                    "type": "string",
+                    "description": "An image, named by the asset part that uses it.",
+                    "contentMediaType": "image/*"
+                  }
+                },
+                "encoding": {
+                  "request": {
+                    "contentType": "application/json"
+                  }
                 }
               }
             }
           },
-          "400": {
-            "description": "The request was rejected. A server that does not support a question type or request parameter returns this status with code unsupported_question_type or unsupported_parameter.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemOneErrorResponse"
+          "responses": {
+            "200": {
+              "description": "Answers keyed by question name.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemOneResponse"
+                  }
                 }
               }
+            },
+            "400": {
+              "description": "The request was rejected. A server that does not support a question type or request parameter returns this status with code unsupported_question_type or unsupported_parameter.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemOneErrorResponse"
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Any other error. Status codes and bodies are implementer-defined."
             }
-          },
-          "default": {
-            "description": "Any other error. Status codes and bodies are implementer-defined."
           }
         }
       }
-    }
-  },
-  "components": {
+    },
     "schemas": {
       "SystemOneRequest": {
         "type": "object",

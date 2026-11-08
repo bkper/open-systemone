@@ -9,6 +9,8 @@
 //   exactly that schema's properties, with "yes" in its Required column for required ones.
 // - Every core type is named in the answer guarantees section.
 // - Every schema name SPEC.md mentions exists in components.schemas.
+// - The contract fixes no endpoint path: it has no paths, and its operation is the reusable
+//   path item components.pathItems.SystemOne, which implementers serve at a URL they choose.
 
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -164,11 +166,22 @@ function checkSpec() {
     }
 }
 
+function checkEndpoint(document) {
+    if (document.paths !== undefined) {
+        failures.push('the contract must not fix an endpoint path; remove paths');
+    }
+    if (!document.components.pathItems?.SystemOne?.post) {
+        failures.push('the contract has no POST operation in components.pathItems.SystemOne');
+    }
+}
+
 let failed = false;
 for (const contract of contractPaths(root)) {
-    schemas = JSON.parse(readFileSync(contract, 'utf8')).components.schemas;
+    const document = JSON.parse(readFileSync(contract, 'utf8'));
+    schemas = document.components.schemas;
     failures = [];
     checkSpec();
+    checkEndpoint(document);
     const name = relative(root, contract);
     if (failures.length > 0) {
         console.error(failures.map(failure => `SPEC.md (${name}): ${failure}`).join('\n'));

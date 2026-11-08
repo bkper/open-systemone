@@ -12,7 +12,7 @@ The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be in
 - **Question**: a named, typed question about the state (`SystemOneQuestion`). Its `type` selects the question shape and the answer shape.
 - **Answer**: the result for one question, under the question's name, with the question's type (`SystemOneAnswer`).
 - **Asset**: an image referenced from the state, instructions, or criteria by a placeholder (`SystemOneAsset`).
-- **Implementer**: a server that serves `POST /v1/systemone`, such as a model provider or a gateway in front of one.
+- **Implementer**: a server that serves the System One operation at an endpoint URL, such as a model provider or a gateway in front of one.
 - **Client**: anything that calls an implementer.
 - **Decision types** (`noul`, `choice`, `score`, `box`) judge the state: a probability, a choice, a score, or a box in an image. They come from TypeSafe's format.
 - **Extraction types** (`text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, `forecast`) answer with values read, computed, or estimated from the state.
@@ -22,11 +22,13 @@ An implementer need not support every core type. It MUST reject the ones it does
 
 ## Endpoint and envelope
 
-An implementer MUST serve `POST /v1/systemone` and MUST accept an `application/json` body. It MAY also accept `multipart/form-data`, with the JSON request in the first part, named `request`, and each image in its own part.
+The contract fixes no endpoint path. Its operation, `components.pathItems.SystemOne`, is served as an HTTP POST at a URL the implementer chooses, such as `https://api.example.com/v1/systemone`. A client MUST take the full endpoint URL as configuration, not build it from a base URL, so that switching implementers changes only the URL and `model`.
+
+An implementer MUST accept an `application/json` body. It MAY also accept `multipart/form-data`, with the JSON request in the first part, named `request`, and each image in its own part.
 
 | `SystemOneRequest` | Required | Rules |
 | --- | --- | --- |
-| `model` | yes | Name or alias of the model. |
+| `model` | yes | Name or alias of the model. It stays required when an implementer serves a single model at its URL; an implementer MUST reject a model it does not serve. |
 | `state` | yes | String, object, or array. |
 | `questions` | yes | One or more questions keyed by names the client chooses. Types MAY be mixed in one request. |
 | `assets` | no | Images keyed by placeholder. Each placeholder, wherever it appears as or inside a string in `state`, `instructions`, or `criteria`, stands for the asset. An asset carries `data_base64` with `format`, or, in a multipart request, the name of its image `part`; every image part is used by exactly one asset. The placeholder's position is a hint: an implementer MAY present assets before the state, for example when its model reads images only there. |
@@ -155,7 +157,7 @@ An extension type becomes core when at least two independent implementers suppor
 - The first release is [2026-11-07](openapi/2026-11-07.json).
 - `openapi/draft.json` is the working draft. It MAY change at any time and is not a release. At a release it is identical to the new release file, whose date is its `info.version`; between releases its `info.version` is `draft`.
 - Additive changes are new optional request fields or question settings, new response fields, and new core types. Any other change, such as removing, renaming, or retyping a field, or making an optional field required, is breaking. Breaking changes SHOULD be avoided and MUST be marked as breaking in the [changelog](CHANGELOG.md).
-- The endpoint path stays `/v1/systemone` across releases.
+- Releases after 2026-11-07 fix no endpoint path. The 2026-11-07 release defines its operation at `/v1/systemone`.
 - Clients pin a release by vendoring its dated file, optionally with a checksum. Implementers SHOULD state which release they implement.
 
 ## Compatibility with TypeSafe
