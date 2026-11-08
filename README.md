@@ -4,6 +4,8 @@ An open specification for System One model APIs: what [Open Responses](https://w
 
 Open System One is independent. It is not affiliated with TypeSafe or Open Responses.
 
+> **Status: early draft.** The 2026-11-07 release is a first snapshot, implemented by one gateway against three models. Expect breaking changes in the next releases. A dated release never changes, so pin one if you depend on it.
+
 ## Purpose
 
 System One models answer typed questions about an input, the state, directly. They return structured answers with probabilities instead of generated text. Decision questions judge the state (yes/no, choice, score); extraction questions read values from it (text, numbers, dates, lists, estimates). The client's code makes the decisions.
