@@ -59,6 +59,17 @@ describe('built site', () => {
         expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
     });
 
+    it('keeps a space between words and the links or code next to them', () => {
+        const glued: string[] = [];
+        for (const page of files(dist).filter(path => path.endsWith('.html'))) {
+            const html = readFileSync(page, 'utf8');
+            for (const [match] of html.matchAll(/\w<(a|code)[\s>]|<\/(a|code)>(?!s\b)\w/g)) {
+                glued.push(`${relative(dist, page)}: ${match}`);
+            }
+        }
+        expect(glued).toEqual([]);
+    });
+
     it('links only to pages and files that exist', () => {
         const broken: string[] = [];
         for (const page of files(dist).filter(path => path.endsWith('.html'))) {

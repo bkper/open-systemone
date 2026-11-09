@@ -15,9 +15,9 @@ const schemas = Object.entries(latest.components.schemas);
 <Layout title="Reference" description={`The schemas of the Open System One ${version} release.`}>
     <h1>Reference</h1>
     <p>
-        The schemas of the <strong>{version}</strong> release. Download it as
-        <a href={`/openapi/${version}.json`}>openapi/{version}.json</a>, or see the
-        <a href="/openapi/draft.json">working draft</a>.
+        The schemas of the <strong>{version}</strong> release.
+        Download it as <a href={`/openapi/${version}.json`}>openapi/{version}.json</a>,
+        or see the <a href="/openapi/draft.json">working draft</a>.
     </p>
     {schemas.map(([name, schema]) => (
         <section>

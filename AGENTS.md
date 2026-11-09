@@ -27,6 +27,7 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - Stay a strict superset of TypeSafe's format. Do not change TypeSafe's existing request or answer shapes.
 - Keep it thin. No marketing copy.
 - The site presents the spec; it does not define it. It renders `SPEC.md` and `CHANGELOG.md` and serves the files in `openapi/` byte for byte, so it never holds a second copy. Its own pages are the overview and the adapters.
+- In `.astro` templates, never end a line with text when the next line starts with a tag: Astro drops that line break, gluing the words together. Keep the text and its link on one line; a site test checks the built pages.
 - Never deploy the site from a local machine. Run `cd site && bun install && bun run test` before committing site changes.
 - The contract fixes no endpoint path. Its operation is `components.pathItems.SystemOne`; implementers serve it at a URL they choose.
 - Every relative link in the markdown files must resolve to an existing file.
