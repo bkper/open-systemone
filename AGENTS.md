@@ -14,7 +14,7 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - `scripts/validate.js`: validates the examples against the contract
 - `scripts/check-spec.js`: checks that `SPEC.md` agrees with the contract
 - `scripts/check-releases.js`: checks that released files never change
-- `site/`: the website at https://opensystemone.org (Astro, static), served as static files only, and deployed by `.github/workflows/deploy.yml` on push to `main`. It also serves `/llms.txt` and each page as Markdown, such as `/specification.md`
+- `site/`: the website at https://opensystemone.org (Astro, static), served as static files only, and deployed by `.github/workflows/deploy.yml` on push to `main`. It also serves `/llms.txt`, `/sitemap.xml`, and each page as Markdown, such as `/specification.md`. The page list lives in `site/src/lib/pages.ts`
 - `site/og/og.html`: source of the share image `site/public/og.png`; after changing it, render it at 1200x630 and save the screenshot as the image
 
 ## Rules

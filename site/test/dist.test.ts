@@ -39,8 +39,39 @@ describe('built site', () => {
         expect(links.filter(link => !resolves(link))).toEqual([]);
     });
 
+    it('serves a Markdown twin of every HTML page', () => {
+        const pages = files(dist)
+            .filter(path => path.endsWith('.html') && !path.endsWith('404.html'))
+            .map(path => relative(dist, path).replace(/\.html$/, ''));
+        expect(pages.length).toBeGreaterThan(0);
+        for (const page of pages) {
+            const markdown = readFileSync(join(dist, `${page}.md`), 'utf8');
+            expect({ page, heading: markdown.startsWith('# ') }).toEqual({ page, heading: true });
+        }
+    });
+
+    it('lists every page in the sitemap, which robots.txt points to', () => {
+        const sitemap = readFileSync(join(dist, 'sitemap.xml'), 'utf8');
+        const listed = [...sitemap.matchAll(/<loc>https:\/\/opensystemone\.org(\/[^<]*)<\/loc>\s*<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g)]
+            .map(match => match[1] ?? '');
+        const pages = files(dist)
+            .filter(path => path.endsWith('.html') && !path.endsWith('404.html'))
+            .map(path => `/${relative(dist, path).replace(/\.html$/, '').replace(/^index$/, '')}`);
+        expect(listed.toSorted()).toEqual(pages.toSorted());
+        expect(readFileSync(join(dist, 'robots.txt'), 'utf8')).toContain('Sitemap: https://opensystemone.org/sitemap.xml');
+    });
+
+    it('describes the site as JSON-LD on the homepage', () => {
+        const html = readFileSync(join(dist, 'index.html'), 'utf8');
+        const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+        const graph: { '@type': string; name?: string; url?: string }[] = JSON.parse(json ?? '{}')['@graph'] ?? [];
+        const website = graph.find(node => node['@type'] === 'WebSite');
+        expect(website?.name).toBe('Open System One');
+        expect(website?.url).toBe('https://opensystemone.org/');
+    });
+
     it('serves Markdown pages with absolute links only', () => {
-        for (const page of ['index.md', 'specification.md', 'adapters.md', 'changelog.md']) {
+        for (const page of ['index.md', 'specification.md', 'reference.md', 'adapters.md', 'changelog.md']) {
             const markdown = readFileSync(join(dist, page), 'utf8');
             const relative = [...markdown.matchAll(/\]\(([^)]+)\)/g)]
                 .map(match => match[1] ?? '')

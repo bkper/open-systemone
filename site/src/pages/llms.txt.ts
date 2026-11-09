@@ -18,10 +18,18 @@ const llms = `# Open System One
 - Releases are dated OpenAPI files that never change. The latest release is ${latest}.
 - Status: early draft, implemented so far by one gateway against three models. Expect breaking changes in the next releases; pin a dated release if you depend on it.
 
+## When to use
+
+- Use it when you call System One models and want one request and response format for all of them, so switching models means changing only the endpoint URL and the model, not your code.
+- Use it when you serve a System One model, or a gateway in front of several, and want clients written against the contract to call you unchanged. Serve the OpenAPI operation at any URL; reject question types and parameters you don't support with the documented errors.
+- Use it for classification, scoring, yes/no decisions, and extracting typed values (dates, amounts, lists, spans) from text or images, where you need probabilities and machine-checkable answers.
+- Don't use it for generated text, chat, tool calling, or embeddings: those belong to chat and responses APIs such as Open Responses.
+
 ## Docs
 
 - [Overview](${SITE_URL}/index.md): why a shared contract matters, what it defines, and an example
 - [Specification](${SITE_URL}/specification.md): the normative rules, question types, answer guarantees, and errors
+- [Reference](${SITE_URL}/reference.md): every schema of the latest release, with its properties and types
 - [Adapters](${SITE_URL}/adapters.md): how TypeSafe, Cloudflare Clef and Clairic, and OpenAI Decisions map to the contract
 - [Changelog](${SITE_URL}/changelog.md): contract changes in each release
 

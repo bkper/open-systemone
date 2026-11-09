@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
-import { REPOSITORY_URL } from '../lib/links.ts';
+import { REPOSITORY_URL, SITE_URL } from '../lib/links.ts';
+import { PAGES } from '../lib/pages.ts';
 
 interface Props {
     title?: string;
@@ -14,14 +15,39 @@ const description = props.description ?? props.frontmatter?.description ??
     'An open specification for System One model APIs.';
 const pageTitle = title && title !== 'Open System One' ? `${title} · Open System One` : 'Open System One';
 const path = Astro.url.pathname.replace(/\.html$/, '').replace(/\/(index)?$/, '') || '/';
+const markdownHref = PAGES.some(page => page.href === path) ? `${path === '/' ? '/index' : path}.md` : undefined;
 
-const nav = [
-    { label: 'Overview', href: '/' },
-    { label: 'Specification', href: '/specification' },
-    { label: 'Reference', href: '/reference' },
-    { label: 'Adapters', href: '/adapters' },
-    { label: 'Changelog', href: '/changelog' },
-];
+
+// Structured data for the homepage, so agents and search engines can read what the site is.
+const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'WebSite',
+            name: 'Open System One',
+            url: `${SITE_URL}/`,
+            description,
+            inLanguage: 'en',
+            publisher: { '@id': `${SITE_URL}/#organization` },
+        },
+        {
+            '@type': 'Organization',
+            '@id': `${SITE_URL}/#organization`,
+            name: 'Open System One',
+            url: `${SITE_URL}/`,
+            logo: `${SITE_URL}/favicon.svg`,
+            sameAs: [REPOSITORY_URL, 'https://github.com/opensystemoneorg'],
+        },
+        {
+            '@type': 'TechArticle',
+            headline: 'Open System One specification',
+            url: `${SITE_URL}/specification`,
+            license: `${REPOSITORY_URL}/blob/main/LICENSE`,
+            keywords: 'Open System One, System One models, System One API, OpenAPI specification, structured model answers',
+            publisher: { '@id': `${SITE_URL}/#organization` },
+        },
+    ],
+};
 ---
 
 <!doctype html>
@@ -43,6 +69,9 @@ const nav = [
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href={new URL(path, Astro.site)} />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        {markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        {path === '/' && <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />}
     </head>
     <body>
         <header>
@@ -56,7 +85,7 @@ const nav = [
         </header>
         <div class="page">
             <nav aria-label="Site">
-                {nav.map(item => (
+                {PAGES.map(item => (
                     <a href={item.href} aria-current={item.href === path ? 'page' : undefined}>{item.label}</a>
                 ))}
             </nav>

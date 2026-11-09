@@ -1,13 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { typeLabel, type Contract } from '../lib/schema.ts';
+import { typeLabel } from '../lib/schema.ts';
+import { latestRelease as latest } from '../lib/releases.ts';
 
-const contracts = import.meta.glob<Contract>('../../../openapi/*.json', { import: 'default', eager: true });
-const releases = Object.entries(contracts)
-    .filter(([path]) => /\/\d{4}-\d{2}-\d{2}\.json$/.test(path))
-    .sort(([a], [b]) => a.localeCompare(b));
-const latest = releases.at(-1)?.[1];
-if (!latest) throw new Error('No released OpenAPI file in openapi/');
 const version = latest.info.version;
 const schemas = Object.entries(latest.components.schemas);
 ---
