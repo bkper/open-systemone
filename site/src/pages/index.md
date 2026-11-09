@@ -70,6 +70,10 @@ POST https://api.example.com/v1/systemone
 }
 ```
 
+## Origin
+
+Open System One started at [Bkper](https://bkper.com), a bookkeeping platform that uses System One models to categorize transactions and read invoices and bank statements. Trying models from TypeSafe and Cloudflare there meant a separate adapter for each format, and every app that called them depended on those formats. Bkper wrote down the contract its gateway serves and published it as a separate, open specification, so other providers, gateways, and clients can use it on the same terms. Bkper's gateway is the one implementation mentioned in the status above.
+
 ## Get involved
 
 Open System One is developed in the open on [GitHub](https://github.com/opensystemoneorg/opensystemone). Providers, gateways, and client authors are welcome: open an issue or a pull request with what your API needs, or tell us when you implement it.
