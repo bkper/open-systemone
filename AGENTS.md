@@ -14,7 +14,7 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - `scripts/validate.js`: validates the examples against the contract
 - `scripts/check-spec.js`: checks that `SPEC.md` agrees with the contract
 - `scripts/check-releases.js`: checks that released files never change
-- `site/`: the website at https://opensystemone.org (Astro, static), served by `site/worker.ts`, which only redirects `www` and plain HTTP to `https://opensystemone.org`, and deployed by `.github/workflows/deploy.yml` on push to `main`. It also serves `/llms.txt` and each page as Markdown, such as `/specification.md`
+- `site/`: the website at https://opensystemone.org (Astro, static), served as static files only, and deployed by `.github/workflows/deploy.yml` on push to `main`. It also serves `/llms.txt` and each page as Markdown, such as `/specification.md`
 - `site/og/og.html`: source of the share image `site/public/og.png`; after changing it, render it at 1200x630 and save the screenshot as the image
 
 ## Rules
@@ -28,6 +28,7 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - Keep it thin. No marketing copy.
 - The site presents the spec; it does not define it. It renders `SPEC.md` and `CHANGELOG.md` and serves the files in `openapi/` byte for byte, so it never holds a second copy. Its own pages are the overview and the adapters.
 - In `.astro` templates, never end a line with text when the next line starts with a tag: Astro drops that line break, gluing the words together. Keep the text and its link on one line; a site test checks the built pages.
+- The redirects from `www` and plain HTTP to `https://opensystemone.org` are Cloudflare zone settings (the Redirect Rule "Redirect from WWW to root" and Always Use HTTPS), not code. Keep the site free of Worker code so changes go live in seconds.
 - Never deploy the site from a local machine. Run `cd site && bun install && bun run test` before committing site changes.
 - The contract fixes no endpoint path. Its operation is `components.pathItems.SystemOne`; implementers serve it at a URL they choose.
 - Every relative link in the markdown files must resolve to an existing file.

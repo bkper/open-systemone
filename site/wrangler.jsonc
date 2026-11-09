@@ -1,19 +1,18 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
-    // The static site in dist/, served by worker.ts, which redirects www to the bare domain.
+    // A static site: Workers static assets only, no Worker code. The redirects from www and plain
+    // HTTP to https://opensystemone.org are zone settings in Cloudflare, not code: the Redirect Rule
+    // "Redirect from WWW to root" and Always Use HTTPS.
     "name": "opensystemone",
-    "main": "./worker.ts",
     "compatibility_date": "2026-11-01",
     "assets": {
         "directory": "./dist",
         "html_handling": "drop-trailing-slash",
-        "not_found_handling": "404-page",
-        "binding": "ASSETS",
-        // Every request reaches the Worker first, so www requests are redirected, not served.
-        "run_worker_first": true
+        "not_found_handling": "404-page"
     },
     "routes": [
         { "pattern": "opensystemone.org", "custom_domain": true },
+        // Kept so www resolves and reaches the zone's redirect rule.
         { "pattern": "www.opensystemone.org", "custom_domain": true }
     ],
     "workers_dev": false,
