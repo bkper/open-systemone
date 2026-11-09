@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Open System One",
-    "version": "draft",
+    "version": "2026-11-09",
     "summary": "An open contract for System One model APIs.",
     "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. Releases are dated, immutable files; version is the release date.",
     "license": {
@@ -18,6 +18,17 @@
           "summary": "Answer questions about a state",
           "description": "Answers one or more named questions about the content in `state`. Question types can be mixed in one request. Each answer is returned under its question's name and has its question's type.",
           "operationId": "systemone",
+          "parameters": [
+            {
+              "name": "Content-Encoding",
+              "in": "header",
+              "description": "Compression of the request body, in one layer. Omit it for an uncompressed body.",
+              "schema": {
+                "type": "string",
+                "enum": ["gzip", "x-gzip", "zstd"]
+              }
+            }
+          ],
           "requestBody": {
             "required": true,
             "content": {
@@ -29,7 +40,7 @@
               "multipart/form-data": {
                 "schema": {
                   "type": "object",
-                  "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part.",
+                  "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part. An implementer that accepts images accepts this form.",
                   "properties": {
                     "request": {
                       "description": "The JSON request, as the first part.",
@@ -66,7 +77,7 @@
               }
             },
             "400": {
-              "description": "The request was rejected. A server that does not support a question type or request parameter returns this status with code unsupported_question_type or unsupported_parameter.",
+              "description": "The request was rejected. A server that does not support a question type or request parameter returns this status with code unsupported_question_type or unsupported_parameter. So does a compressed body that does not decompress.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -74,6 +85,9 @@
                   }
                 }
               }
+            },
+            "415": {
+              "description": "The body uses an unsupported Content-Encoding, or more than one encoding layer."
             },
             "default": {
               "description": "Any other error. Status codes and bodies are implementer-defined."

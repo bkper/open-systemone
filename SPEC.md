@@ -2,7 +2,7 @@
 
 > **Status: early draft.** Later releases may include breaking changes, marked in the [changelog](CHANGELOG.md).
 
-This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-07.json](openapi/2026-11-07.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
+This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-09.json](openapi/2026-11-09.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
 
 The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be interpreted as described in RFC 2119.
 
@@ -24,7 +24,9 @@ An implementer need not support every core type. It MUST reject the ones it does
 
 The contract fixes no endpoint path. Its operation, `components.pathItems.SystemOne`, is served as an HTTP POST at a URL the implementer chooses, such as `https://api.example.com/v1/systemone`. A client MUST take the full endpoint URL as configuration, not build it from a base URL, so that switching implementers changes only the URL and `model`.
 
-An implementer MUST accept an `application/json` body. It MAY also accept `multipart/form-data`, with the JSON request in the first part, named `request`, and each image in its own part.
+An implementer MUST accept an `application/json` body. An implementer that accepts images MUST also accept `multipart/form-data`, with the JSON request in the first part, named `request`, and each image in its own part, named by the `part` of the asset that uses it.
+
+An implementer MUST accept a body compressed with `Content-Encoding: gzip`, `x-gzip`, or `zstd`, in one layer. Its size limits apply to the decompressed body too. It MUST reject any other encoding, or more than one layer, with HTTP 415, and a body that does not decompress with HTTP 400. Clients SHOULD keep a zstd window at most 8 MiB; an implementer MAY reject a larger one with HTTP 400.
 
 | `SystemOneRequest` | Required | Rules |
 | --- | --- | --- |
@@ -163,5 +165,6 @@ An extension type becomes core when at least two independent implementers suppor
 ## Compatibility with TypeSafe
 
 - Open System One is a strict superset of TypeSafe's format: a valid TypeSafe request is a valid `SystemOneRequest`, and TypeSafe answers are valid `SystemOneAnswer`s.
+- Implementers accept requests as TypeSafe's clients send them: compressed, and with images as multipart (see [Endpoint and envelope](#endpoint-and-envelope)).
 - Releases MUST NOT change TypeSafe's request or answer shapes.
 - If TypeSafe adds a type whose name collides with a core type, the next dated release adopts TypeSafe's shape. If that shape is not compatible with the core one, the change is breaking and is marked as such; earlier releases keep the old shape.

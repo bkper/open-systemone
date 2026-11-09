@@ -1,0 +1,1367 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Open System One",
+    "version": "2026-11-09",
+    "summary": "An open contract for System One model APIs.",
+    "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. Releases are dated, immutable files; version is the release date.",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "components": {
+    "pathItems": {
+      "SystemOne": {
+        "description": "The System One operation. The contract fixes no URL: an implementer serves this operation at a URL it chooses, and a client takes the full URL as configuration.",
+        "post": {
+          "summary": "Answer questions about a state",
+          "description": "Answers one or more named questions about the content in `state`. Question types can be mixed in one request. Each answer is returned under its question's name and has its question's type.",
+          "operationId": "systemone",
+          "parameters": [
+            {
+              "name": "Content-Encoding",
+              "in": "header",
+              "description": "Compression of the request body, in one layer. Omit it for an uncompressed body.",
+              "schema": {
+                "type": "string",
+                "enum": ["gzip", "x-gzip", "zstd"]
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOneRequest"
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part. An implementer that accepts images accepts this form.",
+                  "properties": {
+                    "request": {
+                      "description": "The JSON request, as the first part.",
+                      "contentMediaType": "application/json",
+                      "contentSchema": {
+                        "$ref": "#/components/schemas/SystemOneRequest"
+                      }
+                    }
+                  },
+                  "required": ["request"],
+                  "additionalProperties": {
+                    "type": "string",
+                    "description": "An image, named by the asset part that uses it.",
+                    "contentMediaType": "image/*"
+                  }
+                },
+                "encoding": {
+                  "request": {
+                    "contentType": "application/json"
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Answers keyed by question name.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemOneResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The request was rejected. A server that does not support a question type or request parameter returns this status with code unsupported_question_type or unsupported_parameter. So does a compressed body that does not decompress.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemOneErrorResponse"
+                  }
+                }
+              }
+            },
+            "415": {
+              "description": "The body uses an unsupported Content-Encoding, or more than one encoding layer."
+            },
+            "default": {
+              "description": "Any other error. Status codes and bodies are implementer-defined."
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SystemOneRequest": {
+        "type": "object",
+        "title": "SystemOneRequest",
+        "description": "Content and named questions to evaluate together.",
+        "required": ["model", "state", "questions"],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Name or alias of the model to use."
+          },
+          "state": {
+            "$ref": "#/components/schemas/SystemOneContent",
+            "description": "The content all questions in this request refer to: a string, or structured data as an object or array."
+          },
+          "questions": {
+            "type": "object",
+            "description": "Questions about the state, each under a name you choose. The response uses the same names for the answers.",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneQuestion"
+            }
+          },
+          "assets": {
+            "type": "object",
+            "description": "Media assets keyed by an opaque placeholder, such as a per-image UUID. Each placeholder, wherever it appears as or inside a string in state, question instructions, or criteria, is replaced with the asset. The placeholder's position is a hint: an implementer may present assets before the state instead. Image assets require a model that accepts images.",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneAsset"
+            }
+          },
+          "reference_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The date that relative dates in the state are resolved against, as YYYY-MM-DD. A server that cannot honor it rejects the request with unsupported_parameter."
+          }
+        }
+      },
+      "SystemOneResponse": {
+        "type": "object",
+        "title": "SystemOneResponse",
+        "description": "Answers keyed by question name, with the model used and token usage.",
+        "required": ["model", "answers", "usage"],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Name of the model that answered. May differ from the alias in the request."
+          },
+          "answers": {
+            "type": "object",
+            "description": "Answers keyed by the question names in the request. Each answer's type matches its question's type.",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneAnswer"
+            }
+          },
+          "usage": {
+            "$ref": "#/components/schemas/SystemOneUsage"
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether the server shortened the state to fit the model's context. Present whenever the server knows. A server may instead reject oversized input with an error of its own."
+          },
+          "state_text": {
+            "type": "string",
+            "description": "The text the model read, when it differs from the state as sent, for example when structured state is serialized to text, or only the portion the model read when truncated is true. Answer spans index into state_text when it is present."
+          }
+        }
+      },
+      "SystemOneUsage": {
+        "type": "object",
+        "title": "SystemOneUsage",
+        "description": "Token usage for the request.",
+        "required": ["input_tokens", "output_tokens"],
+        "properties": {
+          "input_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of input tokens used to evaluate the request."
+          },
+          "output_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of output tokens used to answer the questions."
+          }
+        }
+      },
+      "SystemOneContent": {
+        "title": "SystemOneContent",
+        "description": "Text or structured data: a string, an object, or an array.",
+        "anyOf": [
+          { "type": "string" },
+          { "type": "object", "additionalProperties": true },
+          { "type": "array", "items": true }
+        ]
+      },
+      "SystemOneAsset": {
+        "type": "object",
+        "title": "SystemOneAsset",
+        "description": "An image that replaces its placeholder: its bytes in data_base64 with their format, or, in a multipart request, the name of the image part that holds them.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "image",
+            "description": "Identifies an image asset."
+          },
+          "format": {
+            "type": "string",
+            "enum": ["png", "jpg", "jpeg", "webp"],
+            "description": "The image format, required with data_base64."
+          },
+          "data_base64": {
+            "type": "string",
+            "description": "Base64-encoded image data."
+          },
+          "part": {
+            "type": "string",
+            "description": "In a multipart request, the name of the image part this asset uses. With part, data_base64 is ignored."
+          }
+        }
+      },
+      "SystemOneQuestion": {
+        "title": "SystemOneQuestion",
+        "description": "A question about the state: a core question, or an extension question whose type is named owner:type. The type selects the question shape and the answer shape.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/SystemOneCoreQuestion" },
+          { "$ref": "#/components/schemas/ExtensionQuestion" }
+        ]
+      },
+      "SystemOneCoreQuestion": {
+        "title": "SystemOneCoreQuestion",
+        "description": "A question of a core type. Decision types are noul, choice, score, and box; extraction types are text, number, date, time, datetime, duration, list, estimate, and forecast.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/NoulQuestion" },
+          { "$ref": "#/components/schemas/ChoiceQuestion" },
+          { "$ref": "#/components/schemas/ScoreQuestion" },
+          { "$ref": "#/components/schemas/BoxQuestion" },
+          { "$ref": "#/components/schemas/TextQuestion" },
+          { "$ref": "#/components/schemas/NumberQuestion" },
+          { "$ref": "#/components/schemas/DateQuestion" },
+          { "$ref": "#/components/schemas/TimeQuestion" },
+          { "$ref": "#/components/schemas/DateTimeQuestion" },
+          { "$ref": "#/components/schemas/DurationQuestion" },
+          { "$ref": "#/components/schemas/ListQuestion" },
+          { "$ref": "#/components/schemas/EstimateQuestion" },
+          { "$ref": "#/components/schemas/ForecastQuestion" }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "noul": "#/components/schemas/NoulQuestion",
+            "choice": "#/components/schemas/ChoiceQuestion",
+            "score": "#/components/schemas/ScoreQuestion",
+            "box": "#/components/schemas/BoxQuestion",
+            "text": "#/components/schemas/TextQuestion",
+            "number": "#/components/schemas/NumberQuestion",
+            "date": "#/components/schemas/DateQuestion",
+            "time": "#/components/schemas/TimeQuestion",
+            "datetime": "#/components/schemas/DateTimeQuestion",
+            "duration": "#/components/schemas/DurationQuestion",
+            "list": "#/components/schemas/ListQuestion",
+            "estimate": "#/components/schemas/EstimateQuestion",
+            "forecast": "#/components/schemas/ForecastQuestion"
+          }
+        }
+      },
+      "SystemOneAnswer": {
+        "title": "SystemOneAnswer",
+        "description": "An answer whose type matches its question's type: a core answer, or an extension answer.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/SystemOneCoreAnswer" },
+          { "$ref": "#/components/schemas/ExtensionAnswer" }
+        ]
+      },
+      "SystemOneCoreAnswer": {
+        "title": "SystemOneCoreAnswer",
+        "description": "An answer of a core type.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/NoulAnswer" },
+          { "$ref": "#/components/schemas/ChoiceAnswer" },
+          { "$ref": "#/components/schemas/ScoreAnswer" },
+          { "$ref": "#/components/schemas/BoxAnswer" },
+          { "$ref": "#/components/schemas/TextAnswer" },
+          { "$ref": "#/components/schemas/NumberAnswer" },
+          { "$ref": "#/components/schemas/DateAnswer" },
+          { "$ref": "#/components/schemas/TimeAnswer" },
+          { "$ref": "#/components/schemas/DateTimeAnswer" },
+          { "$ref": "#/components/schemas/DurationAnswer" },
+          { "$ref": "#/components/schemas/ListAnswer" },
+          { "$ref": "#/components/schemas/EstimateAnswer" },
+          { "$ref": "#/components/schemas/ForecastAnswer" }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "noul": "#/components/schemas/NoulAnswer",
+            "choice": "#/components/schemas/ChoiceAnswer",
+            "score": "#/components/schemas/ScoreAnswer",
+            "box": "#/components/schemas/BoxAnswer",
+            "text": "#/components/schemas/TextAnswer",
+            "number": "#/components/schemas/NumberAnswer",
+            "date": "#/components/schemas/DateAnswer",
+            "time": "#/components/schemas/TimeAnswer",
+            "datetime": "#/components/schemas/DateTimeAnswer",
+            "duration": "#/components/schemas/DurationAnswer",
+            "list": "#/components/schemas/ListAnswer",
+            "estimate": "#/components/schemas/EstimateAnswer",
+            "forecast": "#/components/schemas/ForecastAnswer"
+          }
+        }
+      },
+      "NoulQuestion": {
+        "type": "object",
+        "title": "NoulQuestion",
+        "description": "A yes/no question or statement, answered with the probability of yes or true.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "noul"
+          },
+          "instructions": {
+            "description": "The yes/no question or statement to evaluate.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "criteria": {
+            "description": "What counts as a yes or a no answer.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/NoulCriteria" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "NoulCriteria": {
+        "type": "object",
+        "title": "NoulCriteria",
+        "description": "Criteria defining what counts as a yes or a no answer.",
+        "properties": {
+          "true": {
+            "description": "What counts as a yes answer.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "false": {
+            "description": "What counts as a no answer.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "NoulAnswer": {
+        "type": "object",
+        "title": "NoulAnswer",
+        "description": "The probability of a yes answer or a true statement.",
+        "required": ["type", "noul"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "noul"
+          },
+          "noul": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability of a yes answer or a true statement, from 0 to 1."
+          }
+        }
+      },
+      "ChoiceQuestion": {
+        "type": "object",
+        "title": "ChoiceQuestion",
+        "description": "A question that selects one option from the choices in criteria.",
+        "required": ["type", "criteria"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "choice"
+          },
+          "instructions": {
+            "description": "What to decide when choosing an option.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "criteria": {
+            "type": "object",
+            "description": "Choice names mapped to descriptions of when each applies. A choice without a description is interpreted by its name alone.",
+            "minProperties": 1,
+            "maxProperties": 255,
+            "additionalProperties": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/SystemOneContent" },
+                { "type": "null" }
+              ]
+            }
+          }
+        }
+      },
+      "ChoiceAnswer": {
+        "type": "object",
+        "title": "ChoiceAnswer",
+        "description": "The selected choice, confidence, and the probability of each choice.",
+        "required": ["type", "choice", "confidence", "probabilities"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "choice"
+          },
+          "choice": {
+            "type": "string",
+            "description": "The name of the selected choice, one of the question's criteria. Normally the choice with the highest probability."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in the selected choice, from 0 to 1."
+          },
+          "probabilities": {
+            "type": "object",
+            "description": "Probability of each choice, keyed by choice name. Values sum to approximately 1.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneProbability"
+            }
+          }
+        }
+      },
+      "ScoreQuestion": {
+        "type": "object",
+        "title": "ScoreQuestion",
+        "description": "A question that rates the state on an ordered rubric.",
+        "required": ["type", "criteria"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "score"
+          },
+          "instructions": {
+            "description": "What to rate.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          },
+          "criteria": {
+            "type": "array",
+            "description": "Ordered descriptions of the score levels, lowest first. Each description's position is its score, starting at zero.",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/SystemOneContent"
+            }
+          }
+        }
+      },
+      "ScoreAnswer": {
+        "type": "object",
+        "title": "ScoreAnswer",
+        "description": "An expected score with its rubric, confidence, and the probability of each level.",
+        "required": ["type", "score", "confidence", "legend", "probabilities"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "score"
+          },
+          "score": {
+            "type": "number",
+            "description": "Expected score: the probability-weighted average of the levels. May fall between levels."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in the score, from 0 to 1."
+          },
+          "legend": {
+            "type": "object",
+            "description": "The question's criteria keyed by their score level.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneContent"
+            }
+          },
+          "probabilities": {
+            "type": "object",
+            "description": "Probability of each score level, using the same keys as legend. Values sum to approximately 1.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SystemOneProbability"
+            }
+          }
+        }
+      },
+      "BoxQuestion": {
+        "type": "object",
+        "title": "BoxQuestion",
+        "description": "A question that locates what its instructions describe in the request's image.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "box"
+          },
+          "instructions": {
+            "description": "What to locate in the image.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneContent" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "BoxAnswer": {
+        "type": "object",
+        "title": "BoxAnswer",
+        "description": "A located box with normalized edge coordinates and confidence.",
+        "required": ["type", "box", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "box"
+          },
+          "box": {
+            "$ref": "#/components/schemas/BoxCoordinates"
+          },
+          "confidence": {
+            "description": "Confidence in the box, from 0 to 1. Null when the model does not provide confidence.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneProbability" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "BoxCoordinates": {
+        "type": "object",
+        "title": "BoxCoordinates",
+        "description": "Box edges as fractions of the image's height and width, from 0 to 1. Vertical edges are measured from the top; horizontal edges from the left.",
+        "required": ["top", "bottom", "left", "right"],
+        "properties": {
+          "top": { "$ref": "#/components/schemas/SystemOneFraction" },
+          "bottom": { "$ref": "#/components/schemas/SystemOneFraction" },
+          "left": { "$ref": "#/components/schemas/SystemOneFraction" },
+          "right": { "$ref": "#/components/schemas/SystemOneFraction" }
+        }
+      },
+      "TextQuestion": {
+        "type": "object",
+        "title": "TextQuestion",
+        "description": "A question answered with text copied from the state, such as a name or an ID.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "text"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "null_threshold": {
+            "$ref": "#/components/schemas/SystemOneNullThreshold"
+          }
+        }
+      },
+      "TextAnswer": {
+        "type": "object",
+        "title": "TextAnswer",
+        "description": "Text copied from the state. value is null when p_null is above the question's null_threshold, and not null otherwise. When span is not null, the text it covers equals guess.",
+        "required": ["type", "value", "p_null", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "text"
+          },
+          "value": {
+            "description": "The text, or null when the state does not determine it.",
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          },
+          "guess": {
+            "type": "string",
+            "description": "The most likely text, present even when value is null."
+          },
+          "span": {
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
+          },
+          "p_null": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the state does not determine a value."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in guess, from 0 to 1."
+          }
+        },
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
+        }
+      },
+      "NumberQuestion": {
+        "type": "object",
+        "title": "NumberQuestion",
+        "description": "A question answered with a number read or computed from the state.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "number"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/SystemOneUnitLabel"
+          },
+          "integer": {
+            "$ref": "#/components/schemas/SystemOneInteger"
+          },
+          "decimals": {
+            "$ref": "#/components/schemas/SystemOneDecimals"
+          },
+          "null_threshold": {
+            "$ref": "#/components/schemas/SystemOneNullThreshold"
+          }
+        }
+      },
+      "NumberAnswer": {
+        "type": "object",
+        "title": "NumberAnswer",
+        "description": "A number that honors the question's integer and decimals settings. value is null when p_null is above the question's null_threshold, and not null otherwise.",
+        "required": ["type", "value", "p_null", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "number"
+          },
+          "value": {
+            "description": "The number, or null when the state does not determine it.",
+            "anyOf": [
+              { "type": "number" },
+              { "type": "null" }
+            ]
+          },
+          "guess": {
+            "type": "number",
+            "description": "The most likely number, present even when value is null."
+          },
+          "span": {
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
+          },
+          "p_null": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the state does not determine a value."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in guess, from 0 to 1."
+          }
+        },
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
+        }
+      },
+      "DateQuestion": {
+        "type": "object",
+        "title": "DateQuestion",
+        "description": "A question answered with a calendar date read or computed from the state. Dates written without a year are resolved against the request's reference_date when present.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "date"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "null_threshold": {
+            "$ref": "#/components/schemas/SystemOneNullThreshold"
+          }
+        }
+      },
+      "DateAnswer": {
+        "type": "object",
+        "title": "DateAnswer",
+        "description": "A calendar date as YYYY-MM-DD. value is null when p_null is above the question's null_threshold, and not null otherwise.",
+        "required": ["type", "value", "p_null", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "date"
+          },
+          "value": {
+            "description": "The date, or null when the state does not determine it.",
+            "anyOf": [
+              { "type": "string", "format": "date" },
+              { "type": "null" }
+            ]
+          },
+          "guess": {
+            "type": "string",
+            "format": "date",
+            "description": "The most likely date, present even when value is null."
+          },
+          "span": {
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
+          },
+          "p_null": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the state does not determine a value."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in guess, from 0 to 1."
+          }
+        },
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
+        }
+      },
+      "TimeQuestion": {
+        "type": "object",
+        "title": "TimeQuestion",
+        "description": "A question answered with a time of day read or computed from the state.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "time"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "null_threshold": {
+            "$ref": "#/components/schemas/SystemOneNullThreshold"
+          }
+        }
+      },
+      "TimeAnswer": {
+        "type": "object",
+        "title": "TimeAnswer",
+        "description": "A time of day as HH:MM or HH:MM:SS, 24-hour, without a time zone. value is null when p_null is above the question's null_threshold, and not null otherwise.",
+        "required": ["type", "value", "p_null", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "time"
+          },
+          "value": {
+            "description": "The time, or null when the state does not determine it.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneTime" },
+              { "type": "null" }
+            ]
+          },
+          "guess": {
+            "$ref": "#/components/schemas/SystemOneTime",
+            "description": "The most likely time, present even when value is null."
+          },
+          "span": {
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
+          },
+          "p_null": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the state does not determine a value."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in guess, from 0 to 1."
+          }
+        },
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
+        }
+      },
+      "DateTimeQuestion": {
+        "type": "object",
+        "title": "DateTimeQuestion",
+        "description": "A question answered with a date and time read or computed from the state.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "datetime"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "null_threshold": {
+            "$ref": "#/components/schemas/SystemOneNullThreshold"
+          }
+        }
+      },
+      "DateTimeAnswer": {
+        "type": "object",
+        "title": "DateTimeAnswer",
+        "description": "An ISO 8601 date and time, YYYY-MM-DDTHH:MM[:SS[.fraction]], with a UTC offset only when the state gives one. value is null when p_null is above the question's null_threshold, and not null otherwise.",
+        "required": ["type", "value", "p_null", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "datetime"
+          },
+          "value": {
+            "description": "The date and time, or null when the state does not determine it.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneDateTime" },
+              { "type": "null" }
+            ]
+          },
+          "guess": {
+            "$ref": "#/components/schemas/SystemOneDateTime",
+            "description": "The most likely date and time, present even when value is null."
+          },
+          "span": {
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
+          },
+          "p_null": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the state does not determine a value."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in guess, from 0 to 1."
+          }
+        },
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
+        }
+      },
+      "DurationQuestion": {
+        "type": "object",
+        "title": "DurationQuestion",
+        "description": "A question answered with a length of time, as a number in the chosen unit.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "duration"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/SystemOneDurationUnit"
+          },
+          "integer": {
+            "$ref": "#/components/schemas/SystemOneInteger"
+          },
+          "decimals": {
+            "$ref": "#/components/schemas/SystemOneDecimals"
+          },
+          "null_threshold": {
+            "$ref": "#/components/schemas/SystemOneNullThreshold"
+          }
+        }
+      },
+      "DurationAnswer": {
+        "type": "object",
+        "title": "DurationAnswer",
+        "description": "A length of time as a number in the question's unit, honoring its integer and decimals settings. value is null when p_null is above the question's null_threshold, and not null otherwise.",
+        "required": ["type", "value", "p_null", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "duration"
+          },
+          "value": {
+            "description": "The duration, or null when the state does not determine it.",
+            "anyOf": [
+              { "type": "number" },
+              { "type": "null" }
+            ]
+          },
+          "guess": {
+            "type": "number",
+            "description": "The most likely duration, present even when value is null."
+          },
+          "unit": {
+            "$ref": "#/components/schemas/SystemOneDurationUnit",
+            "description": "The unit of value and guess, the same as the question's."
+          },
+          "span": {
+            "description": "Where guess was read in the state text. Absent or null when guess was not read from the state text, for example when it was read from an image or computed.",
+            "anyOf": [
+              { "$ref": "#/components/schemas/SystemOneSpan" },
+              { "type": "null" }
+            ]
+          },
+          "p_null": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the state does not determine a value."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in guess, from 0 to 1."
+          }
+        },
+        "if": {
+          "required": ["span"],
+          "properties": {
+            "span": { "type": "array" }
+          }
+        },
+        "then": {
+          "required": ["guess"]
+        }
+      },
+      "ListQuestion": {
+        "type": "object",
+        "title": "ListQuestion",
+        "description": "A question answered with every matching item in the state.",
+        "required": ["type", "items"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "list"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "items": {
+            "type": "string",
+            "enum": ["text", "number", "date"],
+            "description": "The type of each item, with the same format as the answer of that type."
+          },
+          "decimals": {
+            "$ref": "#/components/schemas/SystemOneDecimals",
+            "description": "Number of decimal places for number items, from 0 to 6."
+          }
+        }
+      },
+      "ListAnswer": {
+        "type": "object",
+        "title": "ListAnswer",
+        "description": "The matching items in the order they appear in the input. Never null: no match is an empty list.",
+        "required": ["type", "value", "confidence"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "list"
+          },
+          "value": {
+            "type": "array",
+            "description": "The items, in input order. Empty when nothing matches.",
+            "items": {
+              "anyOf": [
+                { "type": "string" },
+                { "type": "number" }
+              ]
+            }
+          },
+          "spans": {
+            "type": "array",
+            "description": "One entry per item, in the same order: the item's span, or null when the item was not read from the state text, for example when it was read from an image. Required for text items; for other items, present when they are read from the state text.",
+            "items": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/SystemOneSpan" },
+                { "type": "null" }
+              ]
+            }
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Confidence in the list, from 0 to 1."
+          }
+        }
+      },
+      "EstimateQuestion": {
+        "type": "object",
+        "title": "EstimateQuestion",
+        "description": "A question answered with a distribution over a value the state gives evidence for but may not determine. min and max are both numbers or both dates.",
+        "required": ["type", "min", "max"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "estimate"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/SystemOneUnitLabel"
+          },
+          "min": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "Lowest value the answer may take."
+          },
+          "max": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "Highest value the answer may take."
+          },
+          "step": {
+            "$ref": "#/components/schemas/SystemOneStep"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/SystemOneScale"
+          },
+          "quantiles": {
+            "type": "boolean",
+            "description": "Whether the answer includes quantiles, the 1st to 99th percentiles. Defaults to false."
+          }
+        }
+      },
+      "EstimateAnswer": {
+        "title": "EstimateAnswer",
+        "description": "A distribution over the estimated value. Never null.",
+        "allOf": [
+          { "$ref": "#/components/schemas/SystemOneDistribution" }
+        ],
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "estimate"
+          },
+          "quantiles": {
+            "type": "array",
+            "description": "The 1st to 99th percentiles, in order. Present only when the question sets quantiles to true.",
+            "minItems": 99,
+            "maxItems": 99,
+            "items": {
+              "$ref": "#/components/schemas/SystemOneEstimateValue"
+            }
+          }
+        }
+      },
+      "ForecastQuestion": {
+        "type": "object",
+        "title": "ForecastQuestion",
+        "description": "A question answered with an estimate for each of the next horizon steps of a series in the state. min, max, step, and scale apply to every step.",
+        "required": ["type", "min", "max", "horizon"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "forecast"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/SystemOneInstructions"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/SystemOneUnitLabel"
+          },
+          "min": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "Lowest value any step may take."
+          },
+          "max": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "Highest value any step may take."
+          },
+          "step": {
+            "$ref": "#/components/schemas/SystemOneStep"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/SystemOneScale"
+          },
+          "horizon": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of steps to forecast."
+          },
+          "interval": {
+            "type": "string",
+            "enum": ["step", "minute", "hour", "day", "week", "month", "quarter", "year"],
+            "description": "The time between steps of the series. step means one row of the series as given."
+          }
+        }
+      },
+      "ForecastAnswer": {
+        "type": "object",
+        "title": "ForecastAnswer",
+        "description": "One estimate per step ahead, as a steps array.",
+        "required": ["type", "steps"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "forecast"
+          },
+          "steps": {
+            "type": "array",
+            "description": "Exactly horizon estimates, nearest step first. Steps have no quantiles.",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/SystemOneDistribution"
+            }
+          }
+        }
+      },
+      "ExtensionQuestion": {
+        "type": "object",
+        "title": "ExtensionQuestion",
+        "description": "A question of a non-core type named owner:type. Its other fields are defined by the owner.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/SystemOneExtensionType"
+          }
+        }
+      },
+      "ExtensionAnswer": {
+        "type": "object",
+        "title": "ExtensionAnswer",
+        "description": "An answer to an extension question. Its other fields are defined by the owner of the type.",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/SystemOneExtensionType"
+          }
+        }
+      },
+      "SystemOneExtensionType": {
+        "type": "string",
+        "title": "SystemOneExtensionType",
+        "description": "A non-core type name: a lowercase owner prefix, a colon, and a lowercase type name, such as acme:sentiment.",
+        "pattern": "^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9_-]*$"
+      },
+      "SystemOneInstructions": {
+        "title": "SystemOneInstructions",
+        "description": "What the answer should contain.",
+        "anyOf": [
+          { "$ref": "#/components/schemas/SystemOneContent" },
+          { "type": "null" }
+        ]
+      },
+      "SystemOneNullThreshold": {
+        "type": "number",
+        "title": "SystemOneNullThreshold",
+        "description": "The answer's value is null when p_null is above this threshold.",
+        "exclusiveMinimum": 0,
+        "maximum": 1,
+        "default": 0.5
+      },
+      "SystemOneUnitLabel": {
+        "type": "string",
+        "title": "SystemOneUnitLabel",
+        "description": "The unit of the value, such as USD or kg. It describes the value; it does not convert it."
+      },
+      "SystemOneDurationUnit": {
+        "type": "string",
+        "title": "SystemOneDurationUnit",
+        "description": "The unit of a duration.",
+        "enum": ["seconds", "minutes", "hours", "days", "weeks", "months", "years"],
+        "default": "seconds"
+      },
+      "SystemOneInteger": {
+        "type": "boolean",
+        "title": "SystemOneInteger",
+        "description": "Whether the value must be a whole number.",
+        "default": false
+      },
+      "SystemOneDecimals": {
+        "type": "integer",
+        "title": "SystemOneDecimals",
+        "description": "Number of decimal places in the value, from 0 to 6.",
+        "minimum": 0,
+        "maximum": 6
+      },
+      "SystemOneTime": {
+        "type": "string",
+        "title": "SystemOneTime",
+        "description": "A 24-hour time of day as HH:MM or HH:MM:SS.",
+        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$"
+      },
+      "SystemOneDateTime": {
+        "type": "string",
+        "title": "SystemOneDateTime",
+        "description": "An ISO 8601 date and time, YYYY-MM-DDTHH:MM[:SS[.fraction]], with an optional Z or +HH:MM offset.",
+        "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]+)?)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])?$"
+      },
+      "SystemOneSpan": {
+        "type": "array",
+        "title": "SystemOneSpan",
+        "description": "Where guess was read in the input: a half-open range [start, end) of character offsets, counted in Unicode code points, into state, or into the response's state_text when present.",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "SystemOneEstimateValue": {
+        "title": "SystemOneEstimateValue",
+        "description": "An estimated value: a number, or a date as YYYY-MM-DD for date estimates.",
+        "anyOf": [
+          { "type": "number" },
+          { "type": "string", "format": "date" }
+        ]
+      },
+      "SystemOneStep": {
+        "title": "SystemOneStep",
+        "description": "The grid estimates fall on, starting at min: a positive number (in days for date estimates), or month or year for date estimates.",
+        "anyOf": [
+          { "type": "number", "exclusiveMinimum": 0 },
+          { "type": "string", "enum": ["month", "year"] }
+        ]
+      },
+      "SystemOneScale": {
+        "type": "string",
+        "title": "SystemOneScale",
+        "description": "Whether the model spreads its distribution evenly between min and max (linear) or across orders of magnitude (log).",
+        "enum": ["linear", "log"],
+        "default": "linear"
+      },
+      "SystemOneDistribution": {
+        "type": "object",
+        "title": "SystemOneDistribution",
+        "description": "A predicted distribution, of the same kind as the question's min and max (numbers or dates). value, median, p10, and p90 are within [min, max] and on the step grid; p10 <= median <= p90.",
+        "required": ["value", "median", "p10", "p90"],
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "The point estimate. Never null."
+          },
+          "median": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "The 50th percentile."
+          },
+          "p10": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "The 10th percentile, the low end of the 80% interval."
+          },
+          "p90": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "The 90th percentile, the high end of the 80% interval."
+          },
+          "mean": {
+            "$ref": "#/components/schemas/SystemOneEstimateValue",
+            "description": "The mean, a date for date estimates. It may fall between grid points."
+          },
+          "p_below": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the true value is below min."
+          },
+          "p_above": {
+            "$ref": "#/components/schemas/SystemOneProbability",
+            "description": "Probability that the true value is above max."
+          }
+        }
+      },
+      "SystemOneProbability": {
+        "type": "number",
+        "title": "SystemOneProbability",
+        "description": "A probability or confidence from 0 to 1.",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "SystemOneFraction": {
+        "type": "number",
+        "title": "SystemOneFraction",
+        "description": "A fraction of an image dimension from 0 to 1.",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "SystemOneErrorResponse": {
+        "type": "object",
+        "title": "SystemOneErrorResponse",
+        "description": "An error envelope.",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/SystemOneError"
+          }
+        }
+      },
+      "SystemOneError": {
+        "type": "object",
+        "title": "SystemOneError",
+        "description": "An error. Two codes are standardized: unsupported_question_type, when the server does not support a question's type, and unsupported_parameter, when it cannot honor a request field or question setting. Both use type invalid_request_error and name the rejected field in param. Other codes are implementer-defined.",
+        "required": ["type", "code", "param", "message"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The error category, such as invalid_request_error."
+          },
+          "code": {
+            "description": "A machine-readable error code.",
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          },
+          "param": {
+            "description": "The request field that caused the error, as a path such as reference_date or questions.<name>.type.",
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "A human-readable description of the error."
+          }
+        },
+        "if": {
+          "required": ["code"],
+          "properties": {
+            "code": {
+              "enum": ["unsupported_question_type", "unsupported_parameter"]
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "type": {
+              "const": "invalid_request_error"
+            },
+            "param": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

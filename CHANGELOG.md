@@ -4,8 +4,14 @@ Each release is a dated, immutable OpenAPI file in `openapi/`. Entries describe 
 
 ## Unreleased
 
+## 2026-11-09
+
+Release: [openapi/2026-11-09.json](openapi/2026-11-09.json).
+
 - **Breaking:** the contract fixes no endpoint path. The operation moves from `paths./v1/systemone` to `components.pathItems.SystemOne`, served as `POST` at a URL the implementer chooses. Clients take the full endpoint URL as configuration.
 - `model` stays required when an implementer serves a single model at its URL, and an implementer rejects a model it does not serve.
+- Implementers accept request bodies compressed with `Content-Encoding: gzip`, `x-gzip`, or `zstd`, in one layer, as TypeSafe's clients send them. Other encodings, or more than one layer, return 415; a body that does not decompress returns 400.
+- An implementer that accepts images also accepts them in a `multipart/form-data` request, the form TypeSafe's clients upload images in.
 
 ## 2026-11-07
 
