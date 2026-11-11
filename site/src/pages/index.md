@@ -8,7 +8,7 @@ description: An open specification for System One model APIs, so software can sw
 
 <p class="lead">An open specification for System One model APIs: what <a href="https://www.openresponses.org">Open Responses</a> is for LLMs, for System One models.</p>
 
-> **Status: early draft.** The [2026-11-09 release](/openapi/2026-11-09.json) is an early snapshot, implemented by one gateway against three models. Expect breaking changes in the next releases. A dated release never changes, so pin one if you depend on it.
+> **Status: early draft.** The [2026-11-11 release](/openapi/2026-11-11.json) is an early snapshot. Expect breaking changes in the next releases. A dated release never changes, so pin one if you depend on it.
 
 System One models answer typed questions about an input: the probability that something is true, a choice, a score, or a value read from a document. They return structured answers with probabilities instead of generated text, and software reads those answers directly.
 

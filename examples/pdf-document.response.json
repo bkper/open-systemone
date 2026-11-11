@@ -1,0 +1,39 @@
+{
+  "model": "example-decision-model-1",
+  "answers": {
+    "kind": {
+      "type": "choice",
+      "choice": "invoice",
+      "confidence": 0.96,
+      "probabilities": {
+        "invoice": 0.96,
+        "receipt": 0.02,
+        "bank_statement": 0.01,
+        "other": 0.01
+      }
+    },
+    "addressed_to_book": {
+      "type": "noul",
+      "noul": 0.91
+    },
+    "legibility": {
+      "type": "score",
+      "score": 1.93,
+      "confidence": 0.93,
+      "legend": {
+        "0": "Unreadable.",
+        "1": "Partly readable.",
+        "2": "Fully readable."
+      },
+      "probabilities": {
+        "0": 0,
+        "1": 0.07,
+        "2": 0.93
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 1874,
+    "output_tokens": 0
+  }
+}

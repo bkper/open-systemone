@@ -1,0 +1,42 @@
+{
+  "model": "example-decision-model",
+  "state": {
+    "document": "f2b7c1d0-upload",
+    "book": {
+      "name": "Acme Ltd",
+      "currency": "USD"
+    }
+  },
+  "assets": {
+    "f2b7c1d0-upload": {
+      "type": "file",
+      "media_type": "application/pdf",
+      "data_base64": "JVBERi0xLjcKJcfsj6IK..."
+    }
+  },
+  "questions": {
+    "kind": {
+      "type": "choice",
+      "instructions": "What kind of document is `document`?",
+      "criteria": {
+        "invoice": "A bill from a supplier asking for payment.",
+        "receipt": "Proof of a payment already made.",
+        "bank_statement": "A list of account movements issued by a bank.",
+        "other": "Any other document."
+      }
+    },
+    "addressed_to_book": {
+      "type": "noul",
+      "instructions": "Is `document` addressed to the company named in `book.name`?"
+    },
+    "legibility": {
+      "type": "score",
+      "instructions": "How legible are the amounts and dates in `document`?",
+      "criteria": [
+        "Unreadable.",
+        "Partly readable.",
+        "Fully readable."
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "model": "example-decision-model",
+  "state": "f2b7c1d0-upload",
+  "assets": {
+    "f2b7c1d0-upload": {
+      "type": "file",
+      "data_base64": "JVBERi0xLjcKJcfsj6IK..."
+    }
+  },
+  "questions": {
+    "is_invoice": {
+      "type": "noul",
+      "instructions": "Is this document an invoice?"
+    }
+  }
+}

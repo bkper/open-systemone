@@ -2,7 +2,7 @@
 
 > **Status: early draft.** Later releases may include breaking changes, marked in the [changelog](CHANGELOG.md).
 
-This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-09.json](openapi/2026-11-09.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
+This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-11.json](openapi/2026-11-11.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
 
 The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be interpreted as described in RFC 2119.
 
@@ -11,7 +11,7 @@ The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be in
 - **State**: the input that all questions in a request refer to: a string, or structured data as an object or array (`SystemOneContent`).
 - **Question**: a named, typed question about the state (`SystemOneQuestion`). Its `type` selects the question shape and the answer shape.
 - **Answer**: the result for one question, under the question's name, with the question's type (`SystemOneAnswer`).
-- **Asset**: an image referenced from the state, instructions, or criteria by a placeholder (`SystemOneAsset`).
+- **Asset**: an image or other file referenced from the state, instructions, or criteria by a placeholder (`SystemOneAsset`).
 - **Implementer**: a server that serves the System One operation at an endpoint URL, such as a model provider or a gateway in front of one.
 - **Client**: anything that calls an implementer.
 - **Decision types** (`noul`, `choice`, `score`, `box`) judge the state: a probability, a choice, a score, or a box in an image. They come from TypeSafe's format.
@@ -24,7 +24,7 @@ An implementer need not support every core type. It MUST reject the ones it does
 
 The contract fixes no endpoint path. Its operation, `components.pathItems.SystemOne`, is served as an HTTP POST at a URL the implementer chooses, such as `https://api.example.com/v1/systemone`. A client MUST take the full endpoint URL as configuration, not build it from a base URL, so that switching implementers changes only the URL and `model`.
 
-An implementer MUST accept an `application/json` body. An implementer that accepts images MUST also accept `multipart/form-data`, with the JSON request in the first part, named `request`, and each image in its own part, named by the `part` of the asset that uses it.
+An implementer MUST accept an `application/json` body. An implementer that accepts assets MUST also accept `multipart/form-data`, with the JSON request in the first part, named `request`, and the bytes of each asset in their own part, named by the `part` of the asset that uses it.
 
 An implementer MUST accept a body compressed with `Content-Encoding: gzip`, `x-gzip`, or `zstd`, in one layer. Its size limits apply to the decompressed body too. It MUST reject any other encoding, or more than one layer, with HTTP 415, and a body that does not decompress with HTTP 400. Clients SHOULD keep a zstd window at most 8 MiB; an implementer MAY reject a larger one with HTTP 400.
 
@@ -33,7 +33,7 @@ An implementer MUST accept a body compressed with `Content-Encoding: gzip`, `x-g
 | `model` | yes | Name or alias of the model. It stays required when an implementer serves a single model at its URL; an implementer MUST reject a model it does not serve. |
 | `state` | yes | String, object, or array. |
 | `questions` | yes | One or more questions keyed by names the client chooses. Types MAY be mixed in one request. |
-| `assets` | no | Images keyed by placeholder. Each placeholder, wherever it appears as or inside a string in `state`, `instructions`, or `criteria`, stands for the asset. An asset carries `data_base64` with `format`, or, in a multipart request, the name of its image `part`; every image part is used by exactly one asset. The placeholder's position is a hint: an implementer MAY present assets before the state, for example when its model reads images only there. |
+| `assets` | no | Images and other files keyed by placeholder. Each placeholder, wherever it appears as or inside a string in `state`, `instructions`, or `criteria`, stands for the asset. An asset carries its bytes in `data_base64`, or, in a multipart request, the name of its `part`; every asset part is used by exactly one asset. The placeholder's position is a hint: an implementer MAY present assets before the state, for example when its model reads images only there. See [Assets](#assets). |
 | `reference_date` | no | `YYYY-MM-DD`. Relative and year-less dates in the state resolve against it. |
 
 | `SystemOneResponse` | Required | Rules |
@@ -48,6 +48,13 @@ An implementer MUST accept a body compressed with `Content-Encoding: gzip`, `x-g
 - Setting a field to its documented default is equivalent to omitting it.
 - Implementers MAY add response fields. Clients MUST ignore response fields they do not know.
 - Request fields this specification does not define are implementer-defined: an implementer MAY ignore or reject them.
+
+### Assets
+
+- An image asset (`SystemOneImageAsset`) keeps TypeSafe's shape: `type` `image`, and `format` with `data_base64`.
+- A file asset (`SystemOneFileAsset`) has `type` `file`, a `media_type`, and `data_base64` or `part`. `media_type` is a lowercase `type/subtype` without parameters, such as `application/pdf`, and MUST name the actual format of the bytes. An implementer MAY reject a generic type such as `application/octet-stream`.
+- A file asset with media type `image/png`, `image/jpeg`, or `image/webp` is equivalent to an image asset with format `png`, `jpeg`, or `webp`.
+- An implementer MUST reject an asset its model cannot read with `unsupported_parameter`: `param` is `assets.<placeholder>.type` for an asset type it does not accept, and `assets.<placeholder>.media_type` or `assets.<placeholder>.format` for a format it does not read.
 
 ## Question types
 
@@ -136,7 +143,7 @@ Two error codes are standard. Both use HTTP 400 and the `SystemOneErrorResponse`
 An implementer MUST use:
 
 - `unsupported_question_type` for a question whose type it does not support, whether core, extension, or unknown. `param` is `questions.<name>.type`.
-- `unsupported_parameter` for a request field or question setting defined by this specification that it cannot honor, such as a `reference_date` it cannot apply, `assets` for a model without image input, or `quantiles: true` for a model without quantiles. `param` names the field.
+- `unsupported_parameter` for a request field or question setting defined by this specification that it cannot honor, such as a `reference_date` it cannot apply, an asset the model cannot read, such as a PDF for a model that reads only images, or `quantiles: true` for a model without quantiles. `param` names the field.
 
 An implementer MAY report only the first unsupported item. All other errors, such as unknown models, oversized input, authentication, and rate limits, are implementer-defined.
 

@@ -4,6 +4,14 @@ Each release is a dated, immutable OpenAPI file in `openapi/`. Entries describe 
 
 ## Unreleased
 
+## 2026-11-11
+
+Release: [openapi/2026-11-11.json](openapi/2026-11-11.json).
+
+- File assets: `{ type: "file", media_type, data_base64 | part }` carry a file of any media type, such as `application/pdf`, with its placeholder. Image assets keep TypeSafe's shape, and a file asset with an `image/png`, `image/jpeg`, or `image/webp` media type is equivalent to an image asset. `SystemOneAsset` is now a union of `SystemOneImageAsset` and `SystemOneFileAsset`.
+- An implementer rejects an asset its model cannot read with `unsupported_parameter`, naming the asset's `type`, `media_type`, or `format`.
+- Multipart requests carry the bytes of any asset in their own part, not only images. An implementer that accepts assets accepts multipart.
+
 ## 2026-11-09
 
 Release: [openapi/2026-11-09.json](openapi/2026-11-09.json).

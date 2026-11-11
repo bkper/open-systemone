@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Open System One",
-    "version": "2026-11-09",
+    "version": "2026-11-11",
     "summary": "An open contract for System One model APIs.",
     "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. Releases are dated, immutable files; version is the release date.",
     "license": {
@@ -40,7 +40,7 @@
               "multipart/form-data": {
                 "schema": {
                   "type": "object",
-                  "description": "The JSON request as the first part, named request, then each image as its own part. Every image part needs a unique, non-empty name and must be used by exactly one asset's part. An implementer that accepts images accepts this form.",
+                  "description": "The JSON request as the first part, named request, then the bytes of each asset as their own part. Every asset part needs a unique, non-empty name and must be used by exactly one asset's part. An implementer that accepts assets accepts this form.",
                   "properties": {
                     "request": {
                       "description": "The JSON request, as the first part.",
@@ -53,8 +53,7 @@
                   "required": ["request"],
                   "additionalProperties": {
                     "type": "string",
-                    "description": "An image, named by the asset part that uses it.",
-                    "contentMediaType": "image/*"
+                    "description": "The bytes of an asset, named by the asset part that uses it. The asset's format or media_type describes them."
                   }
                 },
                 "encoding": {
@@ -121,7 +120,7 @@
           },
           "assets": {
             "type": "object",
-            "description": "Media assets keyed by an opaque placeholder, such as a per-image UUID. Each placeholder, wherever it appears as or inside a string in state, question instructions, or criteria, is replaced with the asset. The placeholder's position is a hint: an implementer may present assets before the state instead. Image assets require a model that accepts images.",
+            "description": "Media assets keyed by an opaque placeholder, such as a per-image UUID. Each placeholder, wherever it appears as or inside a string in state, question instructions, or criteria, is replaced with the asset. The placeholder's position is a hint: an implementer may present assets before the state instead. A server rejects an asset its model cannot read with unsupported_parameter.",
             "minProperties": 1,
             "additionalProperties": {
               "$ref": "#/components/schemas/SystemOneAsset"
@@ -193,8 +192,46 @@
         ]
       },
       "SystemOneAsset": {
-        "type": "object",
         "title": "SystemOneAsset",
+        "description": "Media that replaces its placeholder: an image asset, or a file asset of any media type.",
+        "oneOf": [
+          { "$ref": "#/components/schemas/SystemOneImageAsset" },
+          { "$ref": "#/components/schemas/SystemOneFileAsset" }
+        ]
+      },
+      "SystemOneFileAsset": {
+        "type": "object",
+        "title": "SystemOneFileAsset",
+        "description": "A file of any media type that replaces its placeholder, such as a PDF document: its bytes in data_base64, or, in a multipart request, the name of the part that holds them.",
+        "required": ["type", "media_type"],
+        "anyOf": [
+          { "required": ["data_base64"] },
+          { "required": ["part"] }
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "file",
+            "description": "Identifies a file asset."
+          },
+          "media_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$",
+            "description": "The media type of the file's bytes, such as application/pdf: a lowercase type/subtype without parameters, naming the actual format of the bytes."
+          },
+          "data_base64": {
+            "type": "string",
+            "description": "Base64-encoded file data."
+          },
+          "part": {
+            "type": "string",
+            "description": "In a multipart request, the name of the part this asset uses. With part, data_base64 is ignored."
+          }
+        }
+      },
+      "SystemOneImageAsset": {
+        "type": "object",
+        "title": "SystemOneImageAsset",
         "description": "An image that replaces its placeholder: its bytes in data_base64 with their format, or, in a multipart request, the name of the image part that holds them.",
         "properties": {
           "type": {

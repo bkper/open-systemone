@@ -1,0 +1,17 @@
+{
+  "model": "example-decision-model",
+  "state": "f2b7c1d0-upload",
+  "assets": {
+    "f2b7c1d0-upload": {
+      "type": "file",
+      "media_type": "text/csv; charset=utf-8",
+      "data_base64": "ZGF0ZSxhbW91bnQK..."
+    }
+  },
+  "questions": {
+    "is_statement": {
+      "type": "noul",
+      "instructions": "Is this file a bank statement?"
+    }
+  }
+}
