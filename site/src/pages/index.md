@@ -8,8 +8,6 @@ description: An open specification for System One model APIs, so software can sw
 
 <p class="lead">An open specification for System One model APIs: what <a href="https://www.openresponses.org">Open Responses</a> is for LLMs, for System One models.</p>
 
-> **Status: in production.** One gateway implements the [2026-11-11 release](/openapi/2026-11-11.json) for five models from four providers. Releases are dated and never change; breaking changes are avoided and, when unavoidable, marked in the [changelog](/changelog).
-
 System One models answer typed questions about an input: the probability that something is true, a choice, a score, or a value read from a document. They return structured answers with probabilities instead of generated text, and software reads those answers directly.
 
 ## Why
@@ -74,7 +72,7 @@ POST https://api.example.com/v1/systemone
 
 ## Origin
 
-Open System One started at [Bkper](https://bkper.com), a bookkeeping platform that uses System One models to categorize transactions and read invoices and bank statements. Trying models from TypeSafe, Cloudflare, OpenAI, and Google there meant a separate adapter for each format, and every app that called them depended on those formats. Bkper wrote down the contract its gateway serves and published it as a separate, open specification, so other providers, gateways, and clients can use it on the same terms. Bkper's gateway is the one implementation mentioned in the status above.
+Open System One started at [Bkper](https://bkper.com), a bookkeeping platform that uses System One models to categorize transactions and read invoices and bank statements. Trying models from TypeSafe, Cloudflare, OpenAI, and Google there meant a separate adapter for each format, and every app that called them depended on those formats. Bkper wrote down the contract its gateway serves and published it as a separate, open specification, so other providers, gateways, and clients can use it on the same terms. Bkper's gateway is the first implementation.
 
 ## Get involved
 

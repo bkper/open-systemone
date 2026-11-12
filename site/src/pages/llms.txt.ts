@@ -15,9 +15,8 @@ const llms = `# Open System One
 > An open specification for System One model APIs. System One models answer typed questions about an input (a yes/no probability, a choice, a score, or a value read from a document) and return structured answers with probabilities instead of generated text. Implementers serve one request and response contract at a URL they choose, so clients switch models by changing only the endpoint URL and the model.
 
 - The format is TypeSafe's, extended: any valid TypeSafe request is a valid Open System One request.
-- Releases are dated OpenAPI files that never change. The latest release is ${latest}.
+- Releases are dated OpenAPI files that never change; breaking changes are marked in the changelog. The latest release is ${latest}.
 - Origin: started at Bkper, a bookkeeping platform, whose AI gateway is the first implementation; published as a separate, open specification.
-- Status: in production, implemented by one gateway for five models from four providers. Releases never change; breaking changes are avoided and, when unavoidable, marked in the changelog.
 
 ## When to use
 

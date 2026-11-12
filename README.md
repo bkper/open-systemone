@@ -6,8 +6,6 @@ Website: [opensystemone.org](https://opensystemone.org)
 
 Open System One is independent. It is not affiliated with TypeSafe or Open Responses.
 
-> **Status: in production.** One gateway implements the 2026-11-11 release for five models from four providers. Releases are dated and never change; breaking changes are avoided and, when unavoidable, marked in the [changelog](CHANGELOG.md).
-
 ## Purpose
 
 System One models answer typed questions about an input, the state, directly. They return structured answers with probabilities instead of generated text. Decision questions judge the state (yes/no, choice, score); extraction questions read values from it (text, numbers, dates, lists, estimates). The client's code makes the decisions.
