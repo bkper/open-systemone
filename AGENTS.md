@@ -4,9 +4,9 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 
 ## Layout
 
-- `README.md`: purpose, problem, the four gaps, non-goals
+- `README.md`: purpose, problem, what it adds to TypeSafe's format, non-goals
 - `SPEC.md`: normative rules (MUST/SHOULD)
-- `CHANGELOG.md`: contract changes per release, newest first, with an `Unreleased` section
+- `CHANGELOG.md`: contract changes per release, newest first. When a contract change lands in the draft, add it under an `## Unreleased` section above the newest release
 - `LICENSE`: Apache-2.0
 - `openapi/draft.json`: the working draft; `info.version` is `draft` between releases
 - `openapi/<YYYY-MM-DD>.json`: released versions, `info.version` set to the date
@@ -21,12 +21,12 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 
 - The source of truth is hand-written OpenAPI 3.1 JSON in `openapi/`. Do not add TypeSpec, Zod, or code generators.
 - Released files `openapi/<YYYY-MM-DD>.json` are immutable. Never edit, rename, or delete them. Make changes in `openapi/draft.json`, setting its `info.version` back to `draft` first, and release a new dated file.
-- To release: set the draft's `info.version` to today's UTC date, copy it to `openapi/<date>.json`, point the links in `README.md` and `SPEC.md` at it, move the `Unreleased` changelog entries under `## <date>`, commit, and push an annotated tag named `<date>`.
+- To release: set the draft's `info.version` to today's UTC date, copy it to `openapi/<date>.json`, point the links in `README.md` and `SPEC.md` at it, rename the changelog's `Unreleased` section to `## <date>`, commit, and push an annotated tag named `<date>`.
 - `SPEC.md` and the OpenAPI file must agree. Change both in the same commit.
 - No Bkper-specific or provider-specific names in the contract. Non-core types use an `owner:type` prefix.
 - Stay a strict superset of TypeSafe's format. Do not change TypeSafe's existing request or answer shapes.
 - Keep it thin. No marketing copy.
-- The site presents the spec; it does not define it. It renders `SPEC.md` and `CHANGELOG.md` and serves the files in `openapi/` byte for byte, so it never holds a second copy. Its own pages are the overview and the adapters.
+- The site presents the spec; it does not define it. It renders `SPEC.md` and `CHANGELOG.md` and serves the files in `openapi/` byte for byte, so it never holds a second copy. Its own pages are the overview and the adapters. The overview's Implementations section is the one place that lists implementations.
 - In `.astro` templates, never end a line with text when the next line starts with a tag: Astro drops that line break, gluing the words together. Keep the text and its link on one line; a site test checks the built pages.
 - The redirects from `www` and plain HTTP to `https://opensystemone.org` are Cloudflare zone settings (the Redirect Rule "Redirect from WWW to root" and Always Use HTTPS), not code.
 - `site/worker.ts` only negotiates content, like the Bkper marketing site: Markdown when the Accept header names `text/markdown` (`/` serves `/index.md`), a Markdown or JSON 404 for agents, and HTML for everyone else.

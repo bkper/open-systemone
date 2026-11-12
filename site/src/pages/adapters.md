@@ -6,7 +6,7 @@ description: How today's System One APIs map to Open System One.
 
 # Adapters
 
-Until providers serve Open System One themselves, a client or gateway translates. These are the mappings for today's System One APIs. Each adapter also checks every answer against the [answer guarantees](/specification#answer-guarantees) and rejects what a model cannot do with the [standard errors](/specification#errors).
+For implementers. Until providers serve Open System One themselves, a gateway or client library translates. These are the mappings for today's System One APIs. Each adapter also checks every answer against the [answer guarantees](/specification#answer-guarantees) and rejects what a model cannot do with the [standard errors](/specification#errors). Clients written against the contract never see these differences.
 
 The TypeSafe and Cloudflare mappings were verified against their live APIs on 2026-11-07, and the OpenAI and Gemini mappings on 2026-11-12.
 
@@ -22,15 +22,13 @@ Open System One is a superset of TypeSafe's format, so requests and responses pa
 
 - **Question types:** `noul`, `choice`, `score`, and `box`. Reject extraction types with `unsupported_question_type`.
 - **`noul` without `instructions`:** TypeSafe rejects it, although its schema allows it. Send the question name as the instructions.
-- **Images:** `png`, `jpg`, and `jpeg` only; reject `webp` with `unsupported_parameter`. Requests with images need the header `TypeSafe-Danger-Zone-Images: true`.
+- **Assets:** `png`, `jpg`, and `jpeg` images only; reject `webp` with `unsupported_parameter`. Requests with images need the header `TypeSafe-Danger-Zone-Images: true`.
 
 ## Cloudflare Clef
 
 ```http
 POST https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/cloudflare/clef
 ```
-
-
 
 | Open System One | Clef |
 | --- | --- |
@@ -39,7 +37,8 @@ POST https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/cloud
 | `questions` | `questions`. Every question needs `instructions`: send the name when they are missing. |
 | `assets` | `images`: a list of data URLs, read before the state. At most 4, up to 4 MiB each and 8 MiB in total. |
 
-- **Question types:** `noul`, `choice`, and `score`.
+- **Question types:** `noul`, `choice`, and `score`. Reject `box` and extraction types with `unsupported_question_type`.
+- **Assets:** `png`, `jpg`, `jpeg`, and `webp` images.
 - **Limits:** at most 64 questions, names of up to 100 letters, digits, `_`, `.`, or `-`, at least 2 choice options, and 2 to 10 score levels. Reject anything beyond them with `unsupported_parameter`.
 - **Response:** the answers are in `result` of Cloudflare's `{ success, result }` envelope. Clef does not report truncation.
 
@@ -48,8 +47,6 @@ POST https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/cloud
 ```http
 POST https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/cloudflare/clairic
 ```
-
-
 
 | Open System One | Clairic |
 | --- | --- |
@@ -74,6 +71,7 @@ POST https://api.openai.com/v1/decisions
 
 | Open System One | OpenAI Decisions |
 | --- | --- |
+| `model` | `model`, such as `gpt-6-luna` |
 | `state` as a string, without assets | `input` as a string |
 | `state` as an object or an array of objects | `input`: a user message with an `input_json` part. Other arrays are sent as compact JSON text. |
 | `questions: { name: {…} }` | `questions: [{ name, … }]` |
@@ -103,6 +101,8 @@ POST https://api.openai.com/v1/decisions
 POST https://generativelanguage.googleapis.com/v1beta/decisions
 ```
 
+Gemini Decisions is in preview, so these mappings may change.
+
 | Open System One | Gemini Decisions |
 | --- | --- |
 | `model` | `model`, such as `gemini-decision-1` |
@@ -123,17 +123,25 @@ POST https://generativelanguage.googleapis.com/v1beta/decisions
 | HTTP 400 with `error.code` `safety`, `prohibited_content`, `blocklist`, `image_safety`, or `content_blocked` | No equivalent yet: the request fails. See [open gaps](#open-gaps). |
 
 - **Question types:** `noul`, `choice`, and `score`. Reject `box` and extraction types with `unsupported_question_type`.
-- **Assets:** images in every core format, and file assets of media type `application/pdf`; `image/heic`, `image/heif`, `image/gif`, `image/bmp`, and `image/tiff`; `audio/wav`, `audio/mp3`, `audio/mpeg`, `audio/aiff`, `audio/aac`, `audio/ogg`, `audio/flac`, `audio/m4a`, `audio/opus`, `audio/webm`, `audio/l16`, `audio/alaw`, and `audio/mulaw`; and `video/mp4`, `video/mpeg`, `video/mov`, `video/avi`, `video/webm`, `video/wmv`, `video/x-flv`, and `video/3gpp`.
+- **Assets:** image assets in every format, and file assets of these media types:
+
+  | Kind | Media types |
+  | --- | --- |
+  | Documents | `application/pdf` |
+  | Images | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif`, `image/gif`, `image/bmp`, `image/tiff` |
+  | Audio | `audio/wav`, `audio/mp3`, `audio/mpeg`, `audio/aiff`, `audio/aac`, `audio/ogg`, `audio/flac`, `audio/m4a`, `audio/opus`, `audio/webm`, `audio/l16`, `audio/alaw`, `audio/mulaw` |
+  | Video | `video/mp4`, `video/mpeg`, `video/mov`, `video/avi`, `video/webm`, `video/wmv`, `video/x-flv`, `video/3gpp` |
+
 - **Limits:** at most 1,000 questions, named with up to 64 letters, digits, `_`, or `-`; at least 2 choice options, named with up to 128 characters, without leading or trailing spaces, control characters, or non-ASCII spaces; and at least 2 nonempty score levels. Reject anything beyond them with `unsupported_parameter`.
 - **Response:** Gemini does not report truncation.
 
 ## Open gaps
 
-What adapters handle today that the specification does not define yet. Each is a candidate for a later release.
+What adapters handle today that the specification does not define yet. Each is a candidate for a later release. TypeSafe and Cloudflare document none of them.
 
-| Gap | TypeSafe | Cloudflare | OpenAI | Gemini | Adapters today |
-| --- | --- | --- | --- | --- | --- |
-| Safety refusals | Not documented | Not documented | A `refusal` answer per question; the others are answered | HTTP 400 for the whole request | Fail the request with an implementer-defined error |
-| Assets by URL | Not documented | Not documented | HTTPS image URLs | HTTPS and Files API URIs | Send the bytes inline |
-| Image detail | Not documented | Not documented | `detail`: `low`, `high`, `auto`, or `original` | `resolution`: `low`, `medium`, `high`, or `ultra_high` | Use the provider's default |
-| Cached input tokens | Not documented | Not documented | Counted within `input_tokens` | Not offered for decisions | Report them within `input_tokens` |
+| Gap | OpenAI | Gemini | Adapters today |
+| --- | --- | --- | --- |
+| Safety refusals | A `refusal` answer per question; the others are answered | HTTP 400 for the whole request | Fail the request with an implementer-defined error |
+| Assets by URL | HTTPS image URLs | HTTPS and Files API URIs | Send the bytes inline |
+| Image detail | `detail`: `low`, `high`, `auto`, or `original` | `resolution`: `low`, `medium`, `high`, or `ultra_high` | Use the provider's default |
+| Cached input tokens | Counted within `input_tokens` | Not offered for decisions | Report them within `input_tokens` |

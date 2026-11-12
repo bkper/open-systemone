@@ -2,9 +2,9 @@
 
 An open specification for System One model APIs: what [Open Responses](https://www.openresponses.org) is for LLMs, for System One models.
 
-Website: [opensystemone.org](https://opensystemone.org)
+Website, with implementations and how to get started: [opensystemone.org](https://opensystemone.org)
 
-Open System One is independent. It is not affiliated with TypeSafe or Open Responses.
+Open System One is independent. It is not affiliated with TypeSafe, Cloudflare, OpenAI, Google, or Open Responses.
 
 ## Purpose
 
@@ -22,21 +22,21 @@ The format is derived from [TypeSafe's API](https://docs.typesafe.ai) and is a s
 
 System One APIs exist, but each provider has its own envelope, question types, answer shapes, and failure behavior. Clients and gateways that talk to more than one provider end up writing per-provider adapters and guessing at semantics: when a value is null, what a span points at, what happens when input is too long, or what a server does with a question type it does not know.
 
-## The four gaps
-
-Open System One stays close to TypeSafe's format and adds only what is needed to make it a shared contract:
+## What it adds to TypeSafe's format
 
 1. **Dated, immutable releases.** Each release is a single OpenAPI file named by its date. Once released, it never changes.
-2. **Prefixed extension types.** Non-core question types use an `owner:type` name, so implementers can extend without collisions. A rule defines when an extension is promoted to core.
-3. **Normative answer guarantees.** The spec states what every answer must satisfy, such as null rules, span indexing, list ordering, and estimate bounds, so clients can rely on them across providers.
-4. **A standard unsupported error.** A server that cannot handle a question type or request parameter rejects it with a defined error instead of ignoring it silently.
+2. **Normative answer guarantees.** The spec states what every answer must satisfy, such as null rules, span indexing, list ordering, and estimate bounds, so clients can rely on them across providers.
+3. **Standard errors.** A server that cannot handle a question type, setting, or asset rejects it with a defined error instead of ignoring it silently.
+4. **Extraction questions.** `text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, and `forecast` read values from the state, next to TypeSafe's decision types.
+5. **File assets.** Files of any media type, such as a PDF, next to TypeSafe's image assets.
+6. **Prefixed extension types.** Non-core question types use an `owner:type` name, so implementers can extend without collisions. A rule defines when an extension is promoted to core.
 
 ## Non-goals
 
 - Not an LLM or chat API. Use Open Responses for that.
-- Not a model, SDK, hosted service, or website.
+- Not a model, SDK, or hosted service.
 - No provider-specific or vendor-specific names in the contract.
-- No standard for authentication, billing, rate limits, or errors beyond the unsupported error.
+- No standard for authentication, billing, rate limits, or errors beyond the standard errors.
 
 ## Repository
 

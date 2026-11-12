@@ -2,8 +2,6 @@
 
 Each release is a dated, immutable OpenAPI file in `openapi/`. Entries describe contract changes.
 
-## Unreleased
-
 ## 2026-11-11
 
 Release: [openapi/2026-11-11.json](openapi/2026-11-11.json).
