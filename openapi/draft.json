@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Open System One",
-    "version": "2026-11-11",
+    "version": "2026-11-12",
     "summary": "An open contract for System One model APIs.",
     "description": "System One models answer typed questions about a shared input, the state, and return structured answers with probabilities instead of generated text. Releases are dated, immutable files; version is the release date.",
     "license": {
@@ -87,6 +87,16 @@
             },
             "415": {
               "description": "The body uses an unsupported Content-Encoding, or more than one encoding layer."
+            },
+            "422": {
+              "description": "The model declined to answer for safety or policy reasons: code refused. No answers are returned.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemOneErrorResponse"
+                  }
+                }
+              }
             },
             "default": {
               "description": "Any other error. Status codes and bodies are implementer-defined."
@@ -1354,7 +1364,7 @@
       "SystemOneError": {
         "type": "object",
         "title": "SystemOneError",
-        "description": "An error. Two codes are standardized: unsupported_question_type, when the server does not support a question's type, and unsupported_parameter, when it cannot honor a request field or question setting. Both use type invalid_request_error and name the rejected field in param. Other codes are implementer-defined.",
+        "description": "An error. Three codes are standardized, all with type invalid_request_error: unsupported_question_type, when the server does not support a question's type, and unsupported_parameter, when it cannot honor a request field, question setting, or asset, both naming the rejected field in param; and refused, when the model declines to answer for safety or policy reasons, naming the refused question in param, or null when it refuses the whole request. Other codes are implementer-defined.",
         "required": ["type", "code", "param", "message"],
         "properties": {
           "type": {
@@ -1380,24 +1390,48 @@
             "description": "A human-readable description of the error."
           }
         },
-        "if": {
-          "required": ["code"],
-          "properties": {
-            "code": {
-              "enum": ["unsupported_question_type", "unsupported_parameter"]
-            }
-          }
-        },
-        "then": {
-          "properties": {
-            "type": {
-              "const": "invalid_request_error"
+        "allOf": [
+          {
+            "if": {
+              "required": ["code"],
+              "properties": {
+                "code": {
+                  "enum": ["unsupported_question_type", "unsupported_parameter"]
+                }
+              }
             },
-            "param": {
-              "type": "string"
+            "then": {
+              "properties": {
+                "type": {
+                  "const": "invalid_request_error"
+                },
+                "param": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": ["code"],
+              "properties": {
+                "code": {
+                  "const": "refused"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "type": {
+                  "const": "invalid_request_error"
+                },
+                "param": {
+                  "anyOf": [{ "type": "string", "pattern": "^questions\\..+$" }, { "type": "null" }]
+                }
+              }
             }
           }
-        }
+        ]
       }
     }
   }

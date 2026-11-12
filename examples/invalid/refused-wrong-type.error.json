@@ -1,0 +1,8 @@
+{
+  "error": {
+    "type": "server_error",
+    "code": "refused",
+    "param": null,
+    "message": "The model declined to answer this request."
+  }
+}

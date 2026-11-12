@@ -26,7 +26,7 @@ System One APIs exist, but each provider has its own envelope, question types, a
 
 1. **Dated, immutable releases.** Each release is a single OpenAPI file named by its date. Once released, it never changes.
 2. **Normative answer guarantees.** The spec states what every answer must satisfy, such as null rules, span indexing, list ordering, and estimate bounds, so clients can rely on them across providers.
-3. **Standard errors.** A server that cannot handle a question type, setting, or asset rejects it with a defined error instead of ignoring it silently.
+3. **Standard errors.** A server that cannot handle a question type, setting, or asset rejects it with a defined error instead of ignoring it silently, and a refusal to answer has its own code.
 4. **Extraction questions.** `text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, and `forecast` read values from the state, next to TypeSafe's decision types.
 5. **File assets.** Files of any media type, such as a PDF, next to TypeSafe's image assets.
 6. **Prefixed extension types.** Non-core question types use an `owner:type` name, so implementers can extend without collisions. A rule defines when an extension is promoted to core.
@@ -42,7 +42,7 @@ System One APIs exist, but each provider has its own envelope, question types, a
 
 - `README.md`: this overview
 - [SPEC.md](SPEC.md): the normative rules (MUST/SHOULD), including the answer guarantees, errors, extension types, and versioning
-- [openapi/2026-11-11.json](openapi/2026-11-11.json): the contract as hand-written OpenAPI 3.1 JSON, the latest dated release; [openapi/draft.json](openapi/draft.json) is the working draft for the next one
+- [openapi/2026-11-12.json](openapi/2026-11-12.json): the contract as hand-written OpenAPI 3.1 JSON, the latest dated release; [openapi/draft.json](openapi/draft.json) is the working draft for the next one
 - [examples/](examples/README.md): request, response, and error examples, validated against the contract in CI with `bun run validate`, which also checks that SPEC.md agrees with the contract and that released files never change
 - [CHANGELOG.md](CHANGELOG.md): release history
 

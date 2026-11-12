@@ -88,7 +88,7 @@ POST https://api.openai.com/v1/decisions
 | `choice` with `probabilities: [{ value, probability }]` | `choice` with `probabilities: { value: probability }` |
 | `score` with `probabilities: [{ value, label, probability }]` | `score` with `probabilities: { index: probability }`, and `legend` rebuilt from the question's criteria |
 | `usage.input_tokens`, which includes cached tokens, and `usage.output_tokens` | `usage.input_tokens` and `usage.output_tokens` |
-| `refusal` | No equivalent yet: the request fails. See [open gaps](#open-gaps). |
+| `refusal` | The request fails with `refused` at `questions.<name>`, without the other answers |
 
 - **Question types:** `noul`, `choice`, and `score`. Reject `box` and extraction types with `unsupported_question_type`.
 - **Assets:** `png`, `jpg`, `jpeg`, and `webp` images. OpenAI reads no files or audio.
@@ -120,7 +120,7 @@ Gemini Decisions is in preview, so these mappings may change.
 | `usage.total_input_tokens` and `usage.total_output_tokens` | `usage.input_tokens` and `usage.output_tokens`; Gemini may omit output tokens, which are 0 |
 | `noul` with `confidence` | `noul`, without `confidence` |
 | `score` with `legend` | `score`, with `legend` rebuilt from the question's criteria |
-| HTTP 400 with `error.code` `safety`, `prohibited_content`, `blocklist`, `image_safety`, or `content_blocked` | No equivalent yet: the request fails. See [open gaps](#open-gaps). |
+| HTTP 400 with `error.code` `safety`, `prohibited_content`, `blocklist`, `image_safety`, or `content_blocked` | `refused`, with `param` null |
 
 - **Question types:** `noul`, `choice`, and `score`. Reject `box` and extraction types with `unsupported_question_type`.
 - **Assets:** image assets in every format, and file assets of these media types:
@@ -141,7 +141,6 @@ What adapters handle today that the specification does not define yet. Each is a
 
 | Gap | OpenAI | Gemini | Adapters today |
 | --- | --- | --- | --- |
-| Safety refusals | A `refusal` answer per question; the others are answered | HTTP 400 for the whole request | Fail the request with an implementer-defined error |
 | Assets by URL | HTTPS image URLs | HTTPS and Files API URIs | Send the bytes inline |
 | Image detail | `detail`: `low`, `high`, `auto`, or `original` | `resolution`: `low`, `medium`, `high`, or `ultra_high` | Use the provider's default |
 | Cached input tokens | Counted within `input_tokens` | Not offered for decisions | Report them within `input_tokens` |

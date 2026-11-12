@@ -2,6 +2,13 @@
 
 Each release is a dated, immutable OpenAPI file in `openapi/`. Entries describe contract changes.
 
+## 2026-11-12
+
+Release: [openapi/2026-11-12.json](openapi/2026-11-12.json).
+
+- A standard `refused` error: HTTP 422, type `invalid_request_error`, when the model declines to answer for safety or policy reasons. `param` names the refused question, `questions.<name>`, or is null when the whole request is refused. The request fails as a whole, without partial answers.
+- New standard error codes are additive changes.
+
 ## 2026-11-11
 
 Release: [openapi/2026-11-11.json](openapi/2026-11-11.json).

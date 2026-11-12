@@ -1,6 +1,6 @@
 # Open System One Specification
 
-This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-11.json](openapi/2026-11-11.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
+This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-12.json](openapi/2026-11-12.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
 
 The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be interpreted as described in RFC 2119.
 
@@ -129,21 +129,22 @@ An implementer MUST return answers that satisfy these rules. Clients MAY rely on
 
 ## Errors
 
-Two error codes are standard. Both use HTTP 400 and the `SystemOneErrorResponse` envelope.
+Three error codes are standard. All use the `SystemOneErrorResponse` envelope.
 
 | `SystemOneError` | Required | Rules |
 | --- | --- | --- |
 | `type` | yes | `invalid_request_error` for the standard codes. |
-| `code` | yes | `unsupported_question_type` or `unsupported_parameter` for the standard cases. |
-| `param` | yes | Path of the rejected field: `questions.<name>.type`, `questions.<name>.<setting>`, or a request field such as `reference_date` or `assets`. |
+| `code` | yes | `unsupported_question_type`, `unsupported_parameter`, or `refused` for the standard cases. |
+| `param` | yes | Path of the rejected field: `questions.<name>.type`, `questions.<name>.<setting>`, or a request field such as `reference_date` or `assets`. For `refused`, the refused question or null. |
 | `message` | yes | Human-readable. Clients MUST NOT parse it. |
 
 An implementer MUST use:
 
-- `unsupported_question_type` for a question whose type it does not support, whether core, extension, or unknown. `param` is `questions.<name>.type`.
-- `unsupported_parameter` for a request field or question setting defined by this specification that it cannot honor, such as a `reference_date` it cannot apply, an asset the model cannot read, such as a PDF for a model that reads only images, or `quantiles: true` for a model without quantiles. `param` names the field.
+- `unsupported_question_type`, with HTTP 400, for a question whose type it does not support, whether core, extension, or unknown. `param` is `questions.<name>.type`.
+- `unsupported_parameter`, with HTTP 400, for a request field or question setting defined by this specification that it cannot honor, such as a `reference_date` it cannot apply, an asset the model cannot read, such as a PDF for a model that reads only images, or `quantiles: true` for a model without quantiles. `param` names the field.
+- `refused`, with HTTP 422, when the model declines to answer for safety or policy reasons. `param` is `questions.<name>` when it refuses a question, and null when it refuses the whole request. The request fails as a whole: the other questions get no answers.
 
-An implementer MAY report only the first unsupported item. All other errors, such as unknown models, oversized input, authentication, and rate limits, are implementer-defined.
+An implementer MAY report only the first unsupported item or refused question. Whether a refused request is billed is implementer-defined. All other errors, such as unknown models, oversized input, authentication, and rate limits, are implementer-defined.
 
 ## Extension types
 
@@ -163,7 +164,7 @@ An extension type becomes core when at least two independent implementers suppor
 - A release is a single OpenAPI file named `openapi/YYYY-MM-DD.json` by its release date. A released file MUST NOT change.
 - The first release is [2026-11-07](openapi/2026-11-07.json).
 - `openapi/draft.json` is the working draft. It MAY change at any time and is not a release. At a release it is identical to the new release file, whose date is its `info.version`; between releases its `info.version` is `draft`.
-- Additive changes are new optional request fields or question settings, new response fields, and new core types. Any other change, such as removing, renaming, or retyping a field, or making an optional field required, is breaking. Breaking changes SHOULD be avoided and MUST be marked as breaking in the [changelog](CHANGELOG.md).
+- Additive changes are new optional request fields or question settings, new response fields, new core types, and new standard error codes. Any other change, such as removing, renaming, or retyping a field, or making an optional field required, is breaking. Breaking changes SHOULD be avoided and MUST be marked as breaking in the [changelog](CHANGELOG.md).
 - Releases after 2026-11-07 fix no endpoint path. The 2026-11-07 release defines its operation at `/v1/systemone`.
 - Clients pin a release by vendoring its dated file, optionally with a checksum. Implementers SHOULD state which release they implement.
 

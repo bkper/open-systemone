@@ -1,0 +1,8 @@
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "refused",
+    "param": "state",
+    "message": "The model declined to answer this request."
+  }
+}

@@ -34,7 +34,7 @@ This matters more than it did for chat, because code reads every answer. A compa
 - **Decision and extraction questions.** `noul`, `choice`, `score`, and `box` judge the input. `text`, `number`, `date`, `time`, `datetime`, `duration`, `list`, `estimate`, and `forecast` read values from it.
 - **Images and files as assets**, such as a receipt photo or a PDF, referred to from the state by placeholder.
 - **Answer guarantees** that code can rely on, such as when a value is null, what a span points at, and that estimates stay within bounds.
-- **Standard errors** for a question type, setting, or asset a model cannot handle, instead of ignoring it.
+- **Standard errors** for a question type, setting, or asset a model cannot handle, instead of ignoring it, and for a model that refuses to answer.
 - **Dated releases** that never change, and `owner:type` extensions that can become core.
 
 ## Example
