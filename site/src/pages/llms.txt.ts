@@ -31,7 +31,7 @@ const llms = `# Open System One
 - [Overview](${SITE_URL}/index.md): why a shared contract matters, what it defines, and an example
 - [Specification](${SITE_URL}/specification.md): the normative rules, question types, answer guarantees, and errors
 - [Reference](${SITE_URL}/reference.md): every schema of the latest release, with its properties and types
-- [Adapters](${SITE_URL}/adapters.md): how TypeSafe, Cloudflare Clef and Clairic, and OpenAI Decisions map to the contract
+- [Adapters](${SITE_URL}/adapters.md): how TypeSafe, Cloudflare Clef and Clairic, OpenAI Decisions, and Gemini Decisions map to the contract, and the gaps adapters still handle
 - [Changelog](${SITE_URL}/changelog.md): contract changes in each release
 
 ## OpenAPI

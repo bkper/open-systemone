@@ -8,7 +8,9 @@ description: How today's System One APIs map to Open System One.
 
 Until providers serve Open System One themselves, a client or gateway translates. These are the mappings for today's System One APIs. Each adapter also checks every answer against the [answer guarantees](/specification#answer-guarantees) and rejects what a model cannot do with the [standard errors](/specification#errors).
 
-The TypeSafe and Cloudflare mappings were verified against their live APIs on 2026-11-07. The OpenAI mapping follows OpenAI's published documentation.
+The TypeSafe and Cloudflare mappings were verified against their live APIs on 2026-11-07, and the OpenAI and Gemini mappings on 2026-11-12.
+
+A file asset with media type `image/png`, `image/jpeg`, or `image/webp` is an image asset. Every adapter rejects other file assets its provider does not read with `unsupported_parameter`.
 
 ## TypeSafe
 
@@ -70,24 +72,68 @@ POST https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/cloud
 POST https://api.openai.com/v1/decisions
 ```
 
-
-
 | Open System One | OpenAI Decisions |
 | --- | --- |
-| `state` as a string | `input` as a string |
-| `state` as an object or array | `input`: a user message with an `input_json` part |
+| `state` as a string, without assets | `input` as a string |
+| `state` as an object or an array of objects | `input`: a user message with an `input_json` part. Other arrays are sent as compact JSON text. |
 | `questions: { name: {…} }` | `questions: [{ name, … }]` |
+| `instructions` | `instructions`. Send the name when they are missing, and structured instructions as compact JSON text. |
 | `noul` | `predicate`, with `criteria.true` and `criteria.false` written into `instructions` |
-| `choice` with `criteria: { value: description }` | `choice` with `choices: [{ value, description }]` |
-| `score` with `criteria: [label, …]` | `score` with `levels: [{ label }]`, 2 to 10 |
-| `assets` | `input_image` parts with data URLs |
+| `choice` with `criteria: { value: description }` | `choice` with `choices: [{ value, description }]`, without `description` when it is null |
+| `score` with `criteria: [label, …]` | `score` with `levels: [{ label }]` |
+| `assets` | Before the state, for each asset, an `input_text` part with its placeholder, then an `input_image` part with a data URL |
 
 | OpenAI Decisions answer | Open System One answer |
 | --- | --- |
 | `answers: [{ name, … }]` | `answers: { name: {…} }` |
 | `predicate` with `probability` | `noul` with `noul` |
 | `choice` with `probabilities: [{ value, probability }]` | `choice` with `probabilities: { value: probability }` |
-| `score` with `probabilities: [{ value, label, probability }]` | `score` with `probabilities: { index: probability }` and `legend: { index: label }` |
-| `refusal` | No equivalent yet: the request fails |
+| `score` with `probabilities: [{ value, label, probability }]` | `score` with `probabilities: { index: probability }`, and `legend` rebuilt from the question's criteria |
+| `usage.input_tokens`, which includes cached tokens, and `usage.output_tokens` | `usage.input_tokens` and `usage.output_tokens` |
+| `refusal` | No equivalent yet: the request fails. See [open gaps](#open-gaps). |
 
-- **Question types:** `noul`, `choice`, and `score`. OpenAI documents no `box` type and no extraction types; reject them with `unsupported_question_type`.
+- **Question types:** `noul`, `choice`, and `score`. Reject `box` and extraction types with `unsupported_question_type`.
+- **Assets:** `png`, `jpg`, `jpeg`, and `webp` images. OpenAI reads no files or audio.
+- **Limits:** 1 to 400 questions, at least 2 choice options, and 2 to 10 score levels. Reject anything beyond them with `unsupported_parameter`.
+- **Response:** OpenAI does not report truncation.
+
+## Gemini Decisions
+
+```http
+POST https://generativelanguage.googleapis.com/v1beta/decisions
+```
+
+| Open System One | Gemini Decisions |
+| --- | --- |
+| `model` | `model`, such as `gemini-decision-1` |
+| `state` as a string, without assets | `input` as a string |
+| `state` as an object or array | `input` as compact JSON text |
+| `questions` | `questions`, keyed the same way |
+| `instructions` | `instructions`. Send the name when they are missing, and structured instructions and criteria as compact JSON text. |
+| `noul` with `criteria.true` and `criteria.false` | `noul` with `criteria.true_description` and `criteria.false_description` |
+| `choice` criteria with a null description | An empty description, `""` |
+| `assets` | Before the state, for each asset, a text part with its placeholder, then an `image`, `document`, `audio`, or `video` part with `data` and `mime_type`. Gemini joins text parts without a separator, so each part ends its own line. |
+
+| Gemini Decisions answer | Open System One answer |
+| --- | --- |
+| No `model` | The model of the request |
+| `usage.total_input_tokens` and `usage.total_output_tokens` | `usage.input_tokens` and `usage.output_tokens`; Gemini may omit output tokens, which are 0 |
+| `noul` with `confidence` | `noul`, without `confidence` |
+| `score` with `legend` | `score`, with `legend` rebuilt from the question's criteria |
+| HTTP 400 with `error.code` `safety`, `prohibited_content`, `blocklist`, `image_safety`, or `content_blocked` | No equivalent yet: the request fails. See [open gaps](#open-gaps). |
+
+- **Question types:** `noul`, `choice`, and `score`. Reject `box` and extraction types with `unsupported_question_type`.
+- **Assets:** images in every core format, and file assets of media type `application/pdf`; `image/heic`, `image/heif`, `image/gif`, `image/bmp`, and `image/tiff`; `audio/wav`, `audio/mp3`, `audio/mpeg`, `audio/aiff`, `audio/aac`, `audio/ogg`, `audio/flac`, `audio/m4a`, `audio/opus`, `audio/webm`, `audio/l16`, `audio/alaw`, and `audio/mulaw`; and `video/mp4`, `video/mpeg`, `video/mov`, `video/avi`, `video/webm`, `video/wmv`, `video/x-flv`, and `video/3gpp`.
+- **Limits:** at most 1,000 questions, named with up to 64 letters, digits, `_`, or `-`; at least 2 choice options, named with up to 128 characters, without leading or trailing spaces, control characters, or non-ASCII spaces; and at least 2 nonempty score levels. Reject anything beyond them with `unsupported_parameter`.
+- **Response:** Gemini does not report truncation.
+
+## Open gaps
+
+What adapters handle today that the specification does not define yet. Each is a candidate for a later release.
+
+| Gap | TypeSafe | Cloudflare | OpenAI | Gemini | Adapters today |
+| --- | --- | --- | --- | --- | --- |
+| Safety refusals | Not documented | Not documented | A `refusal` answer per question; the others are answered | HTTP 400 for the whole request | Fail the request with an implementer-defined error |
+| Assets by URL | Not documented | Not documented | HTTPS image URLs | HTTPS and Files API URIs | Send the bytes inline |
+| Image detail | Not documented | Not documented | `detail`: `low`, `high`, `auto`, or `original` | `resolution`: `low`, `medium`, `high`, or `ultra_high` | Use the provider's default |
+| Cached input tokens | Not documented | Not documented | Counted within `input_tokens` | Not offered for decisions | Report them within `input_tokens` |
