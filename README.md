@@ -6,7 +6,7 @@ Website: [opensystemone.org](https://opensystemone.org)
 
 Open System One is independent. It is not affiliated with TypeSafe or Open Responses.
 
-> **Status: early draft.** The 2026-11-11 release is an early snapshot. Expect breaking changes in the next releases. A dated release never changes, so pin one if you depend on it.
+> **Status: in production.** One gateway implements the 2026-11-11 release for five models from four providers. Releases are dated and never change; breaking changes are avoided and, when unavoidable, marked in the [changelog](CHANGELOG.md).
 
 ## Purpose
 

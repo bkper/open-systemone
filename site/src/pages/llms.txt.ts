@@ -17,7 +17,7 @@ const llms = `# Open System One
 - The format is TypeSafe's, extended: any valid TypeSafe request is a valid Open System One request.
 - Releases are dated OpenAPI files that never change. The latest release is ${latest}.
 - Origin: started at Bkper, a bookkeeping platform, whose AI gateway is the first implementation; published as a separate, open specification.
-- Status: early draft, implemented so far by one gateway against three models. Expect breaking changes in the next releases; pin a dated release if you depend on it.
+- Status: in production, implemented by one gateway for five models from four providers. Releases never change; breaking changes are avoided and, when unavoidable, marked in the changelog.
 
 ## When to use
 

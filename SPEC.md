@@ -1,6 +1,6 @@
 # Open System One Specification
 
-> **Status: early draft.** Later releases may include breaking changes, marked in the [changelog](CHANGELOG.md).
+> **Status: in production.** Breaking changes are avoided and, when unavoidable, marked in the [changelog](CHANGELOG.md).
 
 This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-11.json](openapi/2026-11-11.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
 
