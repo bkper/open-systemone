@@ -16,7 +16,8 @@ const llms = `# Open System One
 
 - The format is TypeSafe's, extended: any valid TypeSafe request is a valid Open System One request.
 - Releases are dated OpenAPI files that never change; breaking changes are marked in the changelog. The latest release is ${latest}.
-- Origin: started at Bkper, a bookkeeping platform, whose AI gateway is the first implementation; published as a separate, open specification.
+- Origin: started at Bkper, a bookkeeping platform; published as a separate, open specification.
+- Implementations: Bkper's AI gateway, at https://ai.bkper.app/v1/systemone, for models from TypeSafe, Cloudflare, OpenAI, and Google.
 
 ## When to use
 
@@ -27,7 +28,7 @@ const llms = `# Open System One
 
 ## Docs
 
-- [Overview](${SITE_URL}/index.md): why a shared contract matters, what it defines, and an example
+- [Overview](${SITE_URL}/index.md): why a shared contract matters, what it defines, an example, implementations, and how to get started
 - [Specification](${SITE_URL}/specification.md): the normative rules, question types, answer guarantees, and errors
 - [Reference](${SITE_URL}/reference.md): every schema of the latest release, with its properties and types
 - [Adapters](${SITE_URL}/adapters.md): how TypeSafe, Cloudflare Clef and Clairic, OpenAI Decisions, and Gemini Decisions map to the contract, and the gaps adapters still handle
