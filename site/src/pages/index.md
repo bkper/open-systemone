@@ -102,7 +102,7 @@ Implemented it? [Open an issue](https://github.com/opensystemoneorg/opensystemon
 
 1. Serve the operation at a URL you choose, and state which release you implement.
 2. Reject what your model cannot handle with the [standard errors](/specification#errors), and return answers that meet the [answer guarantees](/specification#answer-guarantees).
-3. Check your requests and answers against the [examples](https://github.com/opensystemoneorg/opensystemone/tree/main/examples). To translate an existing API, start from the [adapters](/adapters).
+3. Run the [conformance suite](https://github.com/opensystemoneorg/opensystemone#conformance) against your endpoint. To translate an existing API, start from the [adapters](/adapters).
 
 ## Origin
 

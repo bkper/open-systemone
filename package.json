@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "bun scripts/validate.js && bun scripts/check-spec.js && bun scripts/check-releases.js"
+    "validate": "bun scripts/validate.js && bun scripts/check-spec.js && bun scripts/check-releases.js",
+    "conformance": "bun scripts/conformance.js"
   },
   "devDependencies": {
     "ajv": "8.20.0",

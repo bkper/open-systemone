@@ -22,7 +22,7 @@ Open System One is a superset of TypeSafe's format, so requests and responses pa
 
 - **Question types:** `noul`, `choice`, `score`, and `box`. Reject extraction types with `unsupported_question_type`.
 - **`noul` without `instructions`:** TypeSafe rejects it, although its schema allows it. Send the question name as the instructions.
-- **Assets:** `png`, `jpg`, and `jpeg` images only; reject `webp` with `unsupported_parameter`. Requests with images need the header `TypeSafe-Danger-Zone-Images: true`.
+- **Assets:** `png`, `jpg`, and `jpeg` images only, 280 to 1568 pixels per side; reject `webp` with `unsupported_parameter`. Requests with images need the header `TypeSafe-Danger-Zone-Images: true`, and every asset must be referenced.
 
 ## Cloudflare Clef
 

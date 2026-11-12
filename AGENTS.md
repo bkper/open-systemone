@@ -12,6 +12,8 @@ Public, neutral specification for System One model APIs. Bkper maintains it, but
 - `openapi/<YYYY-MM-DD>.json`: released versions, `info.version` set to the date
 - `examples/`: request, response, and error examples; `examples/invalid/` holds examples that must fail
 - `scripts/validate.js`: validates the examples against the contract
+- `scripts/checks.js`: the schema and answer checks shared by `validate.js` and `conformance.js`
+- `scripts/conformance.js`: the conformance suite, which runs the examples and the implementer rules against a live endpoint
 - `scripts/check-spec.js`: checks that `SPEC.md` agrees with the contract
 - `scripts/check-releases.js`: checks that released files never change
 - `site/`: the website at https://opensystemone.org (Astro, static), served by `site/worker.ts`, and deployed by `.github/workflows/deploy.yml` on push to `main`. It also serves `/llms.txt`, `/sitemap.xml`, and each page as Markdown, such as `/specification.md`. The page list lives in `site/src/lib/pages.ts`

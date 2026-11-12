@@ -38,11 +38,24 @@ System One APIs exist, but each provider has its own envelope, question types, a
 - No provider-specific or vendor-specific names in the contract.
 - No standard for authentication, billing, rate limits, or errors beyond the standard errors.
 
+## Conformance
+
+The conformance suite checks a live endpoint against the latest release. It sends every valid request in [examples/](examples/README.md) with your model, then tests the rules every implementer follows: unknown question types and unreadable assets are rejected with the standard errors, compressed bodies are accepted, unknown encodings return 415, and assets can be sent as multipart.
+
+```bash
+bun install
+bun run --silent conformance --url https://api.example.com/v1/systemone --model your-model \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+An example passes when its answers meet the contract and the answer guarantees, or when the endpoint rejects it with a standard error that names a field of the request, since an implementer need not support every question type. Each test prints `PASS`, `FAIL`, or `SKIP`, and the command exits nonzero on any failure. A refusal cannot be triggered on purpose, so `refused` is not tested. `--silent` keeps `bun` from printing the command, headers included.
+
 ## Repository
 
 - `README.md`: this overview
 - [SPEC.md](SPEC.md): the normative rules (MUST/SHOULD), including the answer guarantees, errors, extension types, and versioning
 - [openapi/2026-11-12.json](openapi/2026-11-12.json): the contract as hand-written OpenAPI 3.1 JSON, the latest dated release; [openapi/draft.json](openapi/draft.json) is the working draft for the next one
+- [scripts/conformance.js](scripts/conformance.js): the conformance suite, run with `bun run conformance`
 - [examples/](examples/README.md): request, response, and error examples, validated against the contract in CI with `bun run validate`, which also checks that SPEC.md agrees with the contract and that released files never change
 - [CHANGELOG.md](CHANGELOG.md): release history
 

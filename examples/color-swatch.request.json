@@ -1,0 +1,27 @@
+{
+  "model": "example-decision-model",
+  "state": "Swatch: 3c9e5a10-swatch",
+  "assets": {
+    "3c9e5a10-swatch": {
+      "type": "image",
+      "format": "png",
+      "data_base64": "iVBORw0KGgoAAAANSUhEUgAAARgAAAEYCAIAAAAI7H7bAAACQklEQVR42u3TMQ0AAAzDsEIpfzSDNBA79lgygkjJtMBRJAAjgZHASICRwEhgJDASYCQwEhgJjAQYCYwERgIjAUYCI4GRwEiAkcBIYCQwEmAkMBIYCTASGAmMBEYCjARGAiOBkQAjgZHASGAkwEhgJDASGAkwEhgJjARGAowERgIjgZEAI4GRwEiAkcBIYCQwEmAkMBIYCYwEGAmMBEYCIwFGAiOBkcBIgJHASGAkMBJgJDASGAmMpAIYCYwERgKMBEYCI4GRACOBkcBIYCTASGAkMBIYCTASGAmMBEYCjARGAiOBkQAjgZHASICRwEhgJDASYCQwEhgJjAQYCYwERgIjAUYCI4GRwEiAkcBIYCQwEmAkMBIYCYwEGAmMBEYCjARGAiOBkQAjgZHASGAkwEhgJDASGAkwEhgJjARGAowERgIjgZEAI4GRwEhgJBXASGAkMBJgJDASGAmMBBgJjARGAiMBRgIjgZHASICRwEhgJDASYCQwEhgJjAQYCYwERgKMBEYCI4GRACOBkcBIYCTASGAkMBIYCTASGAmMBEYCjARGAiOBkQAjgZHASGAkwEhgJDASYCQwEhgJjAQYCYwERgIjAUYCI4GRwEiAkcBIYCQwEmAkMBIYCYwEGAmMBEYCIwFGAiOBkQAjgZHASGAkwEhgJDASGAkwEhgJjARGAowERgIjgZEAI4GRwEhgJMBIYCQwEhhJAjASGAmMBBgJjARGAiMBRgIjgZHASICRwEhgJDASYCQwEhgJjAQYCT4sMEt3DCkIEeIAAAAASUVORK5CYII="
+    }
+  },
+  "questions": {
+    "is_red": {
+      "type": "noul",
+      "instructions": "Is the swatch red?"
+    },
+    "color": {
+      "type": "choice",
+      "instructions": "What color is the swatch?",
+      "criteria": {
+        "red": "Red, crimson, or scarlet.",
+        "green": "Any shade of green.",
+        "blue": "Any shade of blue.",
+        "other": "Any other color."
+      }
+    }
+  }
+}
