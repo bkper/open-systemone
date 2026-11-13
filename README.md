@@ -35,6 +35,7 @@ System One APIs exist, but each provider has its own envelope, question types, a
 
 - Not an LLM or chat API. Use Open Responses for that.
 - Not a model, SDK, or hosted service.
+- Not a benchmark: it fixes what an answer means, not how well a model answers.
 - No provider-specific or vendor-specific names in the contract.
 - No standard for authentication, billing, rate limits, or errors beyond the standard errors.
 

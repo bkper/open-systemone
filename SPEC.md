@@ -2,6 +2,8 @@
 
 This document holds the normative rules of Open System One. The contract itself is the OpenAPI file of a release, the latest being [openapi/2026-11-12.json](openapi/2026-11-12.json); schema names in this document, such as `SystemOneRequest`, refer to its `components.schemas`. Where this document and the OpenAPI file disagree, that is a bug.
 
+The contract fixes the shape and meaning of every request, question, answer, and error, whatever model answers. A client switches models by changing `model`, and the endpoint URL when the implementer changes, not its code. A model that cannot handle a question type, setting, or asset rejects it with a [standard error](#errors) instead of ignoring it.
+
 The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, and MAY are to be interpreted as described in RFC 2119.
 
 ## Scope and terminology
@@ -84,8 +86,10 @@ An implementer MUST return answers that satisfy these rules. Clients MAY rely on
 ### Decision types
 
 - `noul`, `choice`, `score`, and `box` answers keep TypeSafe's shapes exactly.
-- `choice`: `choice` MUST be one of the question's `criteria` names and SHOULD be the one with the highest probability. `probabilities` is keyed by criteria names.
-- `score`: `legend` and `probabilities` are keyed by score level, `"0"` for the first criterion. `score` is within `[0, number of criteria - 1]`.
+- `noul`: `noul` is the probability of a yes answer or a true statement, from 0 to 1.
+- `choice`: `choice` MUST be one of the question's `criteria` names and SHOULD be the one with the highest probability. `probabilities` is keyed by criteria names. `confidence` is the confidence in the selected choice, from 0 to 1.
+- `score`: `legend` and `probabilities` are keyed by score level, `"0"` for the first criterion. `score` is within `[0, number of criteria - 1]`: the probability-weighted average of the levels, so it may fall between them. `confidence` is the confidence in the score, from 0 to 1.
+- `box`: `confidence` is the confidence in the box, from 0 to 1, or null when the model does not provide one.
 
 ### Value types
 

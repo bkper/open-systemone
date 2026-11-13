@@ -25,7 +25,7 @@ System One APIs are at that same starting point. Four providers already ship fou
 | OpenAI | an array with a `name` each | `predicate` | `input_image` parts |
 | Google | an object keyed by name | `noul` | `input` parts |
 
-The answers differ too. One model returns a value that contradicts its own probability of being null, one refuses a single question and another the whole request, and a server may ignore a question type it does not know. A wrapper can rename fields, but it cannot make answers mean the same thing.
+The answers differ too. One model returns a value that contradicts its own probability of being null, one refuses a single question and another the whole request, and a server may ignore a question type it does not know. Renaming fields is not enough: code needs the same rules for every answer.
 
 This matters more than it did for chat, because code reads every answer. A company can call a System One model from hundreds of places across its apps. If each call depends on one provider's format, changing models becomes a migration project instead of a configuration change.
 
@@ -74,7 +74,7 @@ POST https://api.example.com/v1/systemone
 }
 ```
 
-Switching to another implementer changes two values. The questions and the code that reads the answers stay the same:
+Switching to another implementer changes two values, not the code. The questions and the code that reads the answers stay the same, as long as the new model answers those question types; if it does not, it rejects them with a standard error:
 
 ```diff
 - https://api.example.com/v1/systemone
