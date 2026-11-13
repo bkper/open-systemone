@@ -12,7 +12,7 @@ System One models answer typed questions about an input: the probability that so
 
 ## Why
 
-[![Where the model touches your code. Language models touch one place, a chat or agent, behind one LLM API. System One models touch every file that makes a judgment, and each call is tied to one provider's API: TypeSafe, Cloudflare, Google, or OpenAI. With Open System One, the same calls all go through one contract, with any of those models behind it.](/coupling.svg)](/coupling.svg)
+[![Where the model touches your code. Language models touch one place, a chat or agent, with gpt-luna, gpt-sol, claude-sonnet, or gemini-flash behind it. System One models touch everywhere: each judgment in your code is wired to jev, clef, gemini-decision, or gpt-luna-decision. With one contract, the same code and judgments all go through Open System One, with any model behind it.](/coupling.png)](/coupling.png)
 
 LLM APIs began with chat completions: text in, text out. Each provider shipped its own variant, structured output was added later, and applications collected an adapter per provider until Open Responses gave them a shared contract.
 
